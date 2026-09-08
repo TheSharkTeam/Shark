@@ -2,9 +2,13 @@ import hxp.*;
 import lime.tools.*;
 import haxe.Json;
 import haxe.io.Path;
+import haxe.io.Bytes;
 import haxe.crypto.Md5;
 import sys.FileSystem;
 import sys.io.File;
+import sys.net.Socket;
+import sys.net.Host;
+import sys.ssl.Socket as SSLSocket;
 
 class Project extends HXProject
 {
@@ -18,6 +22,34 @@ class Project extends HXProject
 	static inline var ASTC_WARN_THRESHOLD_BYTES:Int = 400000;
 	static inline var ASSET_WARN_THRESHOLD_BYTES:Int = 250000000;
 
+	static var PLACEHOLDER_PATTERNS:Array<String> = ["YOUR_API_KEY", "CHANGE_ME", "REPLACE_ME", "TODO", "XXXXXXXX", "INSERT_KEY_HERE", "SECRET_HERE"];
+
+	static var KNOWN_LICENSES:Map<String, String> = [
+		"lime" => "MIT",
+		"openfl" => "MIT",
+		"flixel" => "MIT",
+		"flixel-addons" => "MIT",
+		"flixel-ui" => "MIT",
+		"hscript" => "MIT",
+		"SScript" => "MIT",
+		"polymod" => "MIT",
+		"hxvlc" => "MIT",
+		"hxdiscord_rpc" => "MIT",
+		"hxmath" => "MIT",
+		"newgrounds" => "MIT",
+		"astc-compressor" => "MIT",
+		"flxanimate" => "MIT",
+		"extension-androidtools" => "MIT",
+		"hxgamemode" => "MIT",
+		"sentry" => "BSD-3-Clause",
+		"munit" => "MIT",
+		"mconsole" => "MIT",
+		"mcover" => "MIT",
+		"flixel-demos" => "MIT"
+	];
+
+	static var ALLOWED_LICENSES:Array<String> = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "zlib", "Unlicense", "ISC"];
+
 	var isDevBranch:Bool;
 	var isStagingBranch:Bool;
 	var isMainBranch:Bool;
@@ -25,6 +57,8 @@ class Project extends HXProject
 	var isGitAvailable:Bool = true;
 	var sharkEnvironment:String;
 	var envVars:Map<String, String> = new Map();
+	var cliArgs:Map<String, String> = new Map();
+	var cliFlags:Array<String> = [];
 	var activeFeatures:Array<String> = [];
 	var buildWarnings:Array<String> = [];
 	var buildStartTime:Float;
@@ -40,6 +74,7 @@ class Project extends HXProject
 		Log.warn('Haxe version is older than 4.3 - this project is built and tested against 4.3.7.');
 		#end
 
+		parseCliArgs();
 		loadEnvFile();
 		recordBuildPhase("env_loaded");
 
@@ -65,12 +100,21 @@ class Project extends HXProject
 		setupOptimizations();
 		recordBuildPhase("assets_and_defines_configured");
 
-		checkConfigJson();
-		checkDependencyIntegrity();
-		validateHmmAlignment();
-		validateAssetIntegrity();
-		checkLocalizationCompleteness();
-		writeThirdPartyNotices();
+		if (!cliFlag("skip-validation"))
+		{
+			checkConfigJson();
+			checkDependencyIntegrity();
+			validateHmmAlignment();
+			validateAssetIntegrity();
+			checkLocalizationCompleteness();
+			validateLicenses();
+			testEndpointConnectivity();
+			writeThirdPartyNotices();
+		}
+		else
+		{
+			buildWarnings.push("Validation phase skipped (--skip-validation) - warnings from that phase were not collected.");
+		}
 
 		if (!debug || envOr("SHARK_FORCE_ASSET_MANIFEST", "") == "1")
 			processAssetManifest();
@@ -102,16 +146,53 @@ class Project extends HXProject
 		setupProductionMode();
 		recordBuildPhase("environment_mode_configured");
 
+		generateChangelogEntry();
+		syncReadmeVersionBadge();
+		writePostBuildHooks();
 		writeBuildInfo();
 		writeBuildReport();
 		maybeCreateGitTag();
+		recordBuildPhase("post_processing_complete");
 
 		logBuildSummary();
+		sendDiscordNotification(buildSummaryMessage());
 	}
 
 	function recordBuildPhase(phase:String):Void
 	{
 		buildPhases.push({phase: phase, ms: (Sys.time() - buildStartTime) * 1000});
+	}
+
+	function parseCliArgs():Void
+	{
+		for (arg in Sys.args())
+		{
+			if (!StringTools.startsWith(arg, "--"))
+				continue;
+
+			var stripped:String = arg.substr(2);
+			var equalsIndex:Int = stripped.indexOf("=");
+
+			if (equalsIndex == -1)
+			{
+				cliFlags.push(stripped);
+				continue;
+			}
+
+			var key:String = stripped.substr(0, equalsIndex);
+			var value:String = stripped.substr(equalsIndex + 1);
+			cliArgs.set(key, value);
+		}
+	}
+
+	function cliFlag(name:String):Bool
+	{
+		return cliFlags.indexOf(name) != -1;
+	}
+
+	function cliOr(name:String, fallback:String):String
+	{
+		return cliArgs.exists(name) ? cliArgs.get(name) : fallback;
 	}
 
 	function loadEnvFile():Void
@@ -157,6 +238,11 @@ class Project extends HXProject
 
 	function envOr(name:String, fallback:String):String
 	{
+		var cliKey:String = name.toLowerCase().split("_").join("-");
+
+		if (cliArgs.exists(cliKey))
+			return cliArgs.get(cliKey);
+
 		var systemValue:String = Sys.getEnv(name);
 
 		if (systemValue != null && systemValue.length > 0)
@@ -202,7 +288,7 @@ class Project extends HXProject
 		try
 		{
 			var parsed:Dynamic = Json.parse(File.getContent(path));
-			var knownSections:Array<String> = ["network", "chat", "api", "image", "audio", "security", "connectivity", "app", "discord", "platforms", "servers"];
+			var knownSections:Array<String> = ["network", "chat", "api", "image", "audio", "security", "connectivity", "app", "discord", "platforms", "servers", "schemaVersion"];
 			var unknownSections:Array<String> = [];
 
 			for (field in Reflect.fields(parsed))
@@ -211,6 +297,8 @@ class Project extends HXProject
 
 			if (unknownSections.length > 0)
 				buildWarnings.push('$path has unrecognized top-level section(s): ${unknownSections.join(", ")} - check for typos.');
+
+			checkConfigSchemaVersion(parsed);
 
 			if (!Reflect.hasField(parsed, "network"))
 			{
@@ -227,10 +315,58 @@ class Project extends HXProject
 
 			if (!debug && Reflect.hasField(network, "chatEndpoint") && StringTools.trim(Std.string(Reflect.field(network, "chatEndpoint"))).length == 0)
 				buildWarnings.push('$path network.chatEndpoint is empty in a release build - chat will stay unconfigured until the user sets it, or requireOnline blocks it.');
+
+			checkApiKeyPlaceholders(network);
 		}
 		catch (e:Dynamic)
 		{
 			buildWarnings.push('$path exists but is not valid JSON - the chat/image API may fail to configure at runtime.');
+		}
+	}
+
+	function checkConfigSchemaVersion(parsed:Dynamic):Void
+	{
+		var CURRENT_SCHEMA_VERSION:Int = 2;
+
+		if (!Reflect.hasField(parsed, "schemaVersion"))
+		{
+			buildWarnings.push('config.json has no "schemaVersion" field - assuming version 1 (legacy). Add "schemaVersion": $CURRENT_SCHEMA_VERSION to silence this warning.');
+			return;
+		}
+
+		var version:Null<Int> = Std.parseInt(Std.string(Reflect.field(parsed, "schemaVersion")));
+
+		if (version == null)
+		{
+			buildWarnings.push('config.json "schemaVersion" is not a valid integer.');
+			return;
+		}
+
+		if (version < CURRENT_SCHEMA_VERSION)
+			buildWarnings.push('config.json schemaVersion ($version) is older than the current schema ($CURRENT_SCHEMA_VERSION) - some fields may be interpreted with legacy defaults.');
+		else if (version > CURRENT_SCHEMA_VERSION)
+			buildWarnings.push('config.json schemaVersion ($version) is newer than this build script understands ($CURRENT_SCHEMA_VERSION) - update Project.hxp.');
+	}
+
+	function checkApiKeyPlaceholders(network:Dynamic):Void
+	{
+		var keyFields:Array<String> = ["chatApiKey", "imageApiKey"];
+
+		for (field in keyFields)
+		{
+			if (!Reflect.hasField(network, field))
+				continue;
+
+			var value:String = Std.string(Reflect.field(network, field)).toUpperCase();
+
+			for (pattern in PLACEHOLDER_PATTERNS)
+			{
+				if (value.indexOf(pattern) != -1)
+				{
+					buildWarnings.push('config.json network.$field looks like a placeholder value - replace it with a real key before shipping a non-dev build.');
+					break;
+				}
+			}
 		}
 	}
 
@@ -258,6 +394,89 @@ class Project extends HXProject
 		}
 	}
 
+	function testEndpointConnectivity():Void
+	{
+		if (envOr("SHARK_CHECK_CONNECTIVITY", "0") != "1")
+			return;
+
+		var path:String = "assets/data/config.json";
+
+		if (!FileSystem.exists(path))
+			return;
+
+		try
+		{
+			var parsed:Dynamic = Json.parse(File.getContent(path));
+			var network:Dynamic = Reflect.field(parsed, "network");
+
+			if (network == null)
+				return;
+
+			checkEndpointReachable("chatEndpoint", Reflect.field(network, "chatEndpoint"));
+			checkEndpointReachable("imageEndpoint", Reflect.field(network, "imageEndpoint"));
+		}
+		catch (e:Dynamic) {}
+	}
+
+	function checkEndpointReachable(label:String, endpoint:Dynamic):Void
+	{
+		if (endpoint == null)
+			return;
+
+		var url:String = Std.string(endpoint);
+
+		if (StringTools.trim(url).length == 0)
+			return;
+
+		try
+		{
+			var parsedUrl = parseUrl(url);
+			var socket = new Socket();
+			socket.setTimeout(3.0);
+			socket.connect(new Host(parsedUrl.host), parsedUrl.port);
+			socket.close();
+			activeFeatures.push('$label reachable (${parsedUrl.host}:${parsedUrl.port})');
+		}
+		catch (e:Dynamic)
+		{
+			buildWarnings.push('$label ("$url") could not be reached during setup - the app may fail to connect at runtime if this persists.');
+		}
+	}
+
+	function parseUrl(url:String):{scheme:String, host:String, port:Int, path:String}
+	{
+		var scheme:String = "https";
+		var rest:String = url;
+		var schemeIndex:Int = url.indexOf("://");
+
+		if (schemeIndex != -1)
+		{
+			scheme = url.substr(0, schemeIndex);
+			rest = url.substr(schemeIndex + 3);
+		}
+
+		var path:String = "/";
+		var pathIndex:Int = rest.indexOf("/");
+
+		if (pathIndex != -1)
+		{
+			path = rest.substr(pathIndex);
+			rest = rest.substr(0, pathIndex);
+		}
+
+		var port:Int = scheme == "https" ? 443 : 80;
+		var host:String = rest;
+		var portIndex:Int = rest.indexOf(":");
+
+		if (portIndex != -1)
+		{
+			host = rest.substr(0, portIndex);
+			port = Std.parseInt(rest.substr(portIndex + 1));
+		}
+
+		return {scheme: scheme, host: host, port: port, path: path};
+	}
+
 	function checkDependencyIntegrity():Void
 	{
 		var required:Array<String> = ["lime", "openfl", "flixel", "flixel-addons", "hscript", "polymod"];
@@ -281,6 +500,23 @@ class Project extends HXProject
 
 		if (missing.length > 0)
 			buildWarnings.push('The following haxelibs appear to be missing locally: ${missing.join(", ")} - run `haxelib install <name>`.');
+	}
+
+	function validateLicenses():Void
+	{
+		for (lib in haxelibs)
+		{
+			if (!KNOWN_LICENSES.exists(lib.name))
+			{
+				buildWarnings.push('No known license recorded for haxelib "${lib.name}" - verify its license manually before distributing Shark.');
+				continue;
+			}
+
+			var license:String = KNOWN_LICENSES.get(lib.name);
+
+			if (ALLOWED_LICENSES.indexOf(license) == -1)
+				buildWarnings.push('haxelib "${lib.name}" uses license "$license", which is not on the approved list (${ALLOWED_LICENSES.join(", ")}) - review before distribution.');
+		}
 	}
 
 	function validateHmmAlignment():Void
@@ -344,13 +580,22 @@ class Project extends HXProject
 
 		var totalSize:Int = 0;
 		var uncompressedLargeTextures:Array<String> = [];
+		var nonPowerOfTwoTextures:Array<String> = [];
 
 		scanDirectory("assets/images", function(fullPath:String, size:Int)
 		{
 			totalSize += size;
 
-			if (StringTools.endsWith(fullPath, ".png") && size > ASTC_WARN_THRESHOLD_BYTES && (target == ANDROID || target == IOS))
+			if (!StringTools.endsWith(fullPath, ".png"))
+				return;
+
+			if (size > ASTC_WARN_THRESHOLD_BYTES && (target == ANDROID || target == IOS))
 				uncompressedLargeTextures.push(fullPath);
+
+			var dimensions = readPngDimensions(fullPath);
+
+			if (dimensions != null && (target == ANDROID || target == IOS) && (!isPowerOfTwo(dimensions.width) || !isPowerOfTwo(dimensions.height)))
+				nonPowerOfTwoTextures.push('$fullPath (${dimensions.width}x${dimensions.height})');
 		});
 
 		if (totalSize > ASSET_WARN_THRESHOLD_BYTES)
@@ -358,6 +603,39 @@ class Project extends HXProject
 
 		if (uncompressedLargeTextures.length > 0)
 			buildWarnings.push('${uncompressedLargeTextures.length} texture(s) over ${formatBytes(ASTC_WARN_THRESHOLD_BYTES)} are still raw PNG for a mobile target - the astc-compressor haxelib is available for this, consider wiring it up: ${uncompressedLargeTextures.join(", ")}');
+
+		if (nonPowerOfTwoTextures.length > 0)
+			buildWarnings.push('${nonPowerOfTwoTextures.length} texture(s) are not power-of-two dimensions on a mobile target - mipmapping and some ASTC block modes may be less efficient: ${nonPowerOfTwoTextures.join(", ")}');
+	}
+
+	function readPngDimensions(path:String):{width:Int, height:Int}
+	{
+		try
+		{
+			var bytes:Bytes = File.getBytes(path);
+
+			if (bytes.length < 24)
+				return null;
+
+			var signatureValid:Bool = bytes.get(0) == 0x89 && bytes.get(1) == 0x50 && bytes.get(2) == 0x4E && bytes.get(3) == 0x47;
+
+			if (!signatureValid)
+				return null;
+
+			var width:Int = (bytes.get(16) << 24) | (bytes.get(17) << 16) | (bytes.get(18) << 8) | bytes.get(19);
+			var height:Int = (bytes.get(20) << 24) | (bytes.get(21) << 16) | (bytes.get(22) << 8) | bytes.get(23);
+
+			return {width: width, height: height};
+		}
+		catch (e:Dynamic)
+		{
+			return null;
+		}
+	}
+
+	function isPowerOfTwo(value:Int):Bool
+	{
+		return value > 0 && (value & (value - 1)) == 0;
 	}
 
 	function scanDirectory(path:String, onFile:String->Int->Void):Void
@@ -400,8 +678,56 @@ class Project extends HXProject
 			catch (e:Dynamic) {}
 		});
 
+		var combinedHash:String = computeCombinedHash(manifest);
+
+		if (isAssetCacheHit(combinedHash))
+		{
+			activeFeatures.push('Asset manifest unchanged (${manifest.length} file(s), cache hit) - skipped rewrite');
+			return;
+		}
+
 		writeAssetManifestFile(manifest);
 		checkForDuplicateAssets(manifest);
+		writeAssetCacheHash(combinedHash);
+	}
+
+	function computeCombinedHash(manifest:Array<{path:String, size:Int, checksum:String}>):String
+	{
+		var sorted:Array<{path:String, size:Int, checksum:String}> = manifest.copy();
+		sorted.sort(function(a, b) return a.path < b.path ? -1 : (a.path > b.path ? 1 : 0));
+
+		var combined:StringBuf = new StringBuf();
+
+		for (entry in sorted)
+			combined.add('${entry.path}:${entry.checksum};');
+
+		return Md5.encode(combined.toString());
+	}
+
+	function isAssetCacheHit(hash:String):Bool
+	{
+		var cachePath:String = ".shark_asset_cache";
+
+		if (!FileSystem.exists(cachePath))
+			return false;
+
+		try
+		{
+			return StringTools.trim(File.getContent(cachePath)) == hash;
+		}
+		catch (e:Dynamic)
+		{
+			return false;
+		}
+	}
+
+	function writeAssetCacheHash(hash:String):Void
+	{
+		try
+		{
+			File.saveContent(".shark_asset_cache", hash);
+		}
+		catch (e:Dynamic) {}
 	}
 
 	function writeAssetManifestFile(manifest:Array<{path:String, size:Int, checksum:String}>):Void
@@ -507,7 +833,8 @@ class Project extends HXProject
 		for (lib in haxelibs)
 		{
 			var version:String = pinned.exists(lib.name) ? pinned.get(lib.name) : "latest";
-			lines.push('- ${lib.name} ($version)');
+			var license:String = KNOWN_LICENSES.exists(lib.name) ? KNOWN_LICENSES.get(lib.name) : "unknown";
+			lines.push('- ${lib.name} ($version) - $license');
 		}
 
 		try
@@ -538,6 +865,19 @@ class Project extends HXProject
 			return formatDecimal(bytes / 1000, 2) + " KB";
 
 		return '$bytes B';
+	}
+
+	function formatDate(date:Date):String
+	{
+		var month:String = StringTools.lpad(Std.string(date.getMonth() + 1), "0", 2);
+		var day:String = StringTools.lpad(Std.string(date.getDate()), "0", 2);
+		return '${date.getFullYear()}-$month-$day';
+	}
+
+	function buildSummaryMessage():String
+	{
+		var status:String = buildWarnings.length == 0 ? "clean" : '${buildWarnings.length} warning(s)';
+		return 'Shark ${meta.version} build (build ${meta.buildNumber}) for $target finished - $status. Branch: $gitBranch, environment: $sharkEnvironment.';
 	}
 
 	function logBuildSummary():Void
@@ -576,6 +916,9 @@ class Project extends HXProject
 
 	function resolveVersion():String
 	{
+		if (cliArgs.exists("version"))
+			return cliArgs.get("version");
+
 		if (FileSystem.exists("VERSION"))
 		{
 			var content:String = StringTools.trim(File.getContent("VERSION"));
@@ -701,6 +1044,7 @@ class Project extends HXProject
 		{
 			addHaxelib("sentry", pinned);
 			activeFeatures.push("Crash reporting (Sentry)");
+			validateSentryDsn(envOr("SHARK_SENTRY_DSN", ""));
 		}
 
 		if (debug)
@@ -716,6 +1060,14 @@ class Project extends HXProject
 				activeFeatures.push("Code coverage (mcover)");
 			}
 		}
+	}
+
+	function validateSentryDsn(dsn:String):Void
+	{
+		var dsnPattern:EReg = ~/^https?:\/\/[a-f0-9]+@[a-zA-Z0-9.\-]+\/[0-9]+$/;
+
+		if (!dsnPattern.match(dsn))
+			buildWarnings.push('SHARK_SENTRY_DSN does not look like a valid Sentry DSN - crash reporting may fail to initialize.');
 	}
 
 	function loadPinnedVersions():Map<String, String>
@@ -805,6 +1157,7 @@ class Project extends HXProject
 
 		setupPolymodDefines();
 		validateBundledMods(entries);
+		validateModDependencyGraph(entries);
 
 		activeFeatures.push('Bundled mods ($scriptModCount script, $folderModCount folder)');
 		Log.info('Bundled mods folder detected: $scriptModCount .hxs script mod(s), $folderModCount Polymod folder mod(s) - packaging with the app.');
@@ -840,6 +1193,38 @@ class Project extends HXProject
 			{
 				buildWarnings.push('Bundled mod "$entry" has an invalid modpack.json (not valid JSON).');
 			}
+		}
+	}
+
+	function validateModDependencyGraph(entries:Array<String>):Void
+	{
+		var folderNames:Array<String> = [for (entry in entries) if (FileSystem.isDirectory('mods/$entry')) entry];
+
+		for (entry in folderNames)
+		{
+			var manifestPath:String = 'mods/$entry/modpack.json';
+
+			if (!FileSystem.exists(manifestPath))
+				continue;
+
+			try
+			{
+				var manifest:Dynamic = Json.parse(File.getContent(manifestPath));
+
+				if (!Reflect.hasField(manifest, "requiredMods"))
+					continue;
+
+				var required:Array<Dynamic> = Reflect.field(manifest, "requiredMods");
+
+				for (dependency in required)
+				{
+					var dependencyName:String = Std.string(dependency);
+
+					if (folderNames.indexOf(dependencyName) == -1)
+						buildWarnings.push('Mod "$entry" requires "$dependencyName", which is not present in mods/ - it will fail to load at runtime.');
+				}
+			}
+			catch (e:Dynamic) {}
 		}
 	}
 
@@ -1353,6 +1738,153 @@ class Project extends HXProject
 		}
 	}
 
+	function generateChangelogEntry():Void
+	{
+		if (envOr("SHARK_AUTO_CHANGELOG", "0") != "1" || debug)
+			return;
+
+		if (!FileSystem.exists("CHANGELOG.md"))
+			return;
+
+		try
+		{
+			var content:String = File.getContent("CHANGELOG.md");
+
+			if (content.indexOf(meta.version) != -1)
+				return;
+
+			var lastTag:String = resolveLastGitTag();
+			var commits:Array<String> = collectCommitsSince(lastTag);
+
+			if (commits.length == 0)
+				return;
+
+			var entryLines:Array<String> = ['## [${meta.version}] - ${formatDate(Date.now())}', ""];
+
+			for (commit in commits)
+				entryLines.push('- $commit');
+
+			entryLines.push("");
+
+			var updated:String = entryLines.join("\n") + content;
+
+			File.saveContent("CHANGELOG.md", updated);
+			activeFeatures.push('Changelog entry generated (${commits.length} commit(s))');
+		}
+		catch (e:Dynamic)
+		{
+			buildWarnings.push("Failed to write CHANGELOG.md auto-entry.");
+		}
+	}
+
+	function resolveLastGitTag():String
+	{
+		try
+		{
+			var process = new sys.io.Process("git", ["describe", "--tags", "--abbrev=0"]);
+			var output:String = StringTools.trim(process.stdout.readAll().toString());
+			process.close();
+			return output;
+		}
+		catch (e:Dynamic)
+		{
+			return "";
+		}
+	}
+
+	function collectCommitsSince(tag:String):Array<String>
+	{
+		var range:String = tag.length > 0 ? '$tag..HEAD' : "HEAD";
+
+		try
+		{
+			var process = new sys.io.Process("git", ["log", range, "--pretty=format:%s"]);
+			var output:String = StringTools.trim(process.stdout.readAll().toString());
+			process.close();
+
+			if (output.length == 0)
+				return [];
+
+			return output.split("\n");
+		}
+		catch (e:Dynamic)
+		{
+			return [];
+		}
+	}
+
+	function syncReadmeVersionBadge():Void
+	{
+		if (envOr("SHARK_SYNC_README", "0") != "1")
+			return;
+
+		if (!FileSystem.exists("README.md"))
+			return;
+
+		try
+		{
+			var content:String = File.getContent("README.md");
+			var badgePattern:EReg = ~/version-[0-9]+\.[0-9]+\.[0-9]+-([a-zA-Z]+)/;
+
+			if (!badgePattern.match(content))
+			{
+				buildWarnings.push("SHARK_SYNC_README=1 but no version badge pattern found in README.md.");
+				return;
+			}
+
+			var color:String = badgePattern.matched(1);
+			var updated:String = badgePattern.replace(content, 'version-${meta.version}-$color');
+
+			if (updated == content)
+				return;
+
+			File.saveContent("README.md", updated);
+			activeFeatures.push("README version badge synced");
+		}
+		catch (e:Dynamic)
+		{
+			buildWarnings.push("Failed to sync README.md version badge.");
+		}
+	}
+
+	function writePostBuildHooks():Void
+	{
+		if (envOr("SHARK_WRITE_POSTBUILD_HOOK", "1") != "1")
+			return;
+
+		var platformFolder:String = Std.string(target).toLowerCase();
+		var hookDir:String = "build_hooks";
+
+		try
+		{
+			if (!FileSystem.exists(hookDir))
+				FileSystem.createDirectory(hookDir);
+
+			var shellScript:String = "#!/bin/sh\n" +
+				"set -e\n" +
+				'ARCHIVE_NAME="shark-${meta.version}-$platformFolder.zip"\n' +
+				'cd "export/$platformFolder"\n' +
+				'zip -r "../../$ARCHIVE_NAME" . -x ".*"\n' +
+				'echo "Created $ARCHIVE_NAME"\n';
+
+			File.saveContent('$hookDir/post_build_$platformFolder.sh', shellScript);
+
+			var batScript:String = "@echo off\n" +
+				'set ARCHIVE_NAME=shark-${meta.version}-$platformFolder.zip\n' +
+				'cd export\\$platformFolder\n' +
+				"powershell Compress-Archive -Path * -DestinationPath ..\\..\\%ARCHIVE_NAME% -Force\n" +
+				"echo Created %ARCHIVE_NAME%\n";
+
+			File.saveContent('$hookDir/post_build_$platformFolder.bat', batScript);
+
+			activeFeatures.push('Post-build packaging hooks written ($hookDir)');
+		}
+		catch (e:Dynamic)
+		{
+			buildWarnings.push("Failed to write post-build packaging hooks.");
+		}
+	}
+
 	function hasIncompleteModFolders():Bool
 	{
 		if (!FileSystem.exists("mods") || !FileSystem.isDirectory("mods"))
@@ -1475,6 +2007,37 @@ class Project extends HXProject
 			File.saveContent("build_report.log", lines.join("\n"));
 		}
 		catch (e:Dynamic) {}
+	}
+
+	function sendDiscordNotification(message:String):Void
+	{
+		var webhookUrl:String = envOr("SHARK_DISCORD_WEBHOOK_URL", "");
+
+		if (webhookUrl.length == 0 || envOr("SHARK_NOTIFY_DISCORD", "0") != "1")
+			return;
+
+		try
+		{
+			var parsedUrl = parseUrl(webhookUrl);
+			var payload:String = Json.stringify({content: message});
+			var request:String = 'POST ${parsedUrl.path} HTTP/1.1\r\n' +
+				'Host: ${parsedUrl.host}\r\n' +
+				'Content-Type: application/json\r\n' +
+				'Content-Length: ${Bytes.ofString(payload).length}\r\n' +
+				'Connection: close\r\n\r\n' + payload;
+
+			var socket = new SSLSocket();
+			socket.setTimeout(5.0);
+			socket.connect(new Host(parsedUrl.host), parsedUrl.port);
+			socket.write(request);
+			socket.close();
+
+			activeFeatures.push("Discord build notification sent");
+		}
+		catch (e:Dynamic)
+		{
+			buildWarnings.push("Failed to send Discord webhook notification.");
+		}
 	}
 
 	function resolveGitCommit():String
