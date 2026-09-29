@@ -48,6 +48,7 @@ class ChatEngine
 	static var isBusy:Bool = false;
 	static var lastRequestTime:Float = 0;
 	static var currentToken:Int = 0;
+	static var lastUserMessage:String = null;
 
 	static inline var IMAGE_TAG_START:String = "[[image:";
 	static inline var IMAGE_TAG_END:String = "]]";
@@ -76,6 +77,8 @@ class ChatEngine
 			return;
 		}
 
+		lastUserMessage = trimmed;
+
 		queue.push({
 			message: trimmed,
 			onComplete: onComplete,
@@ -86,6 +89,11 @@ class ChatEngine
 		});
 
 		processQueue();
+	}
+
+	public static function getLastUserMessage():String
+	{
+		return lastUserMessage;
 	}
 
 	public static function cancelPending():Void
@@ -242,6 +250,47 @@ class ChatEngine
 		return history.copy();
 	}
 
+	public static function forgetLast():Bool
+	{
+		if (history.length == 0)
+			return false;
+
+		var removeCount:Int = (history.length >= 2 && history[history.length - 1].role == "assistant"
+			&& history[history.length - 2].role == "user") ? 2 : 1;
+
+		history.splice(history.length - removeCount, removeCount);
+		saveHistory();
+
+		return true;
+	}
+
+	public static function exportHistory():String
+	{
+		#if sys
+		if (history.length == 0)
+			return null;
+
+		var lines:Array<String> = [for (entry in history) '${entry.role == "user" ? "You" : "Shark"}: ${entry.content}'];
+
+		var base:String = System.applicationStorageDirectory;
+
+		if (!StringTools.endsWith(base, "/") && !StringTools.endsWith(base, "\\"))
+			base += "/";
+
+		var exportDir:String = base + "exports";
+
+		if (!FileSys.ensureDirectory(exportDir))
+			return null;
+
+		var filename:String = 'chat_export_${Std.int(Date.now().getTime() / 1000)}.txt';
+		var path:String = FileSys.joinPath(exportDir, filename);
+
+		return FileSys.writeText(path, lines.join("\n\n")) ? path : null;
+		#else
+		return null;
+		#end
+	}
+
 	public static function deleteMessageAt(index:Int):Bool
 	{
 		if (index < 0 || index >= history.length)
@@ -294,6 +343,7 @@ class ChatEngine
 		queue = [];
 		isBusy = false;
 		currentToken++;
+		lastUserMessage = null;
 
 		saveHistory();
 	}

@@ -53,6 +53,12 @@ class Head
 		registerCommand("/reset", handleResetCommand);
 		registerCommand("!reset", handleResetCommand);
 		registerCommand("/clear", handleResetCommand);
+		registerCommand("/retry", handleRetryCommand);
+		registerCommand("!retry", handleRetryCommand);
+		registerCommand("/forget", handleForgetCommand);
+		registerCommand("!forget", handleForgetCommand);
+		registerCommand("/export", handleExportCommand);
+		registerCommand("!export", handleExportCommand);
 		registerCommand("/help", handleHelpCommand);
 		registerCommand("!help", handleHelpCommand);
 		registerCommand("/about", handleAboutCommand);
@@ -75,6 +81,20 @@ class Head
 	{
 		ensureCommandsInitialized();
 		commands.set(name.toLowerCase(), handler);
+	}
+
+	public static function getAvailableCommands():Array<String>
+	{
+		ensureCommandsInitialized();
+
+		var result:Array<String> = [for (name in commands.keys()) if (StringTools.startsWith(name, "/")) name];
+
+		result.sort(function(a:String, b:String):Int
+		{
+			return a < b ? -1 : (a > b ? 1 : 0);
+		});
+
+		return result;
 	}
 
 	public static function getWelcomeMessage():String
@@ -203,12 +223,46 @@ class Head
 		request.onReply(Language.get("head.reset"));
 	}
 
+	static function handleRetryCommand(request:CommandRequest):Void
+	{
+		var lastMessage:String = ChatEngine.getLastUserMessage();
+
+		if (lastMessage == null)
+		{
+			request.onReply(Language.get("head.retryNothing"));
+			return;
+		}
+
+		sendChatMessage(lastMessage, request.onReply, request.onError, request.onImage, request.onImageError);
+	}
+
+	static function handleForgetCommand(request:CommandRequest):Void
+	{
+		if (ChatEngine.forgetLast())
+			request.onReply(Language.get("head.forgotten"));
+		else
+			request.onReply(Language.get("head.forgetNothing"));
+	}
+
+	static function handleExportCommand(request:CommandRequest):Void
+	{
+		var path:String = ChatEngine.exportHistory();
+
+		if (path == null)
+			request.onReply(Language.get("head.exportFailed"));
+		else
+			request.onReply(Language.get("head.exportSuccess", ["path" => path]));
+	}
+
 	static function handleHelpCommand(request:CommandRequest):Void
 	{
 		var lines:Array<String> = [
 			Language.get("head.helpIntro"),
 			Language.get("head.helpImage"),
 			Language.get("head.helpReset"),
+			Language.get("head.helpRetry"),
+			Language.get("head.helpForget"),
+			Language.get("head.helpExport"),
 			Language.get("head.helpPlay"),
 			Language.get("head.helpMute"),
 			Language.get("head.helpStatus"),

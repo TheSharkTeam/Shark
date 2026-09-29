@@ -15,6 +15,8 @@ import git.resolution.Resolution4K;
 import shark.active.games.BubblePopState;
 import shark.active.games.ReefRunnerState;
 import shark.active.games.DeepDiveState;
+import shark.active.games.SharkFeedFrenzyState;
+import shark.backend.HighScores;
 import shark.backend.Language;
 import shark.menus.MainMenuState;
 
@@ -38,6 +40,7 @@ class GameState extends FlxState
 	static inline var COLOR_KELP:FlxColor = 0xFF14746F;
 	static inline var COLOR_BUBBLE:FlxColor = 0xFF7FD8E8;
 	static inline var COLOR_REEF:FlxColor = 0xFFEF9F76;
+	static inline var COLOR_FISH:FlxColor = 0xFF52B788;
 
 	var games:Array<GameEntry> = [
 		{
@@ -63,6 +66,14 @@ class GameState extends FlxState
 			icon: "\\ /",
 			accentColor: COLOR_ACCENT,
 			stateClass: DeepDiveState
+		},
+		{
+			id: "shark_feed_frenzy",
+			titleKey: "games.sharkFeedFrenzy",
+			descriptionKey: "games.sharkFeedFrenzyDescription",
+			icon: "> <",
+			accentColor: COLOR_FISH,
+			stateClass: SharkFeedFrenzyState
 		}
 	];
 
@@ -135,7 +146,13 @@ class GameState extends FlxState
 				COLOR_FOAM, LEFT);
 			add(titleLabel);
 
-			var descLabel = FlixelShark.makeLocalizedText(cardX + 70, cardY + 12 + (isMobile ? 28 : 24), cardWidth - 190, entry.descriptionKey,
+			var bestScore:Int = Std.int(HighScores.get(entry.id));
+			var descriptionText:String = Language.get(entry.descriptionKey);
+
+			if (bestScore > 0)
+				descriptionText += "\n" + Language.get("games.bestScore", ["score" => Std.string(bestScore)]);
+
+			var descLabel = FlixelShark.makeText(cardX + 70, cardY + 12 + (isMobile ? 28 : 24), cardWidth - 190, descriptionText,
 				Resolution4K.scaledInt(isMobile ? 13 : 12), COLOR_ACCENT, LEFT);
 			add(descLabel);
 

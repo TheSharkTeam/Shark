@@ -8,9 +8,12 @@ import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
+import shark.backend.HighScores;
 
 class ReefRunnerState extends FlxState
 {
+	static inline var GAME_ID:String = "reef_runner";
+
 	static inline var COLOR_ABYSS:FlxColor = 0xFF00111F;
 	static inline var COLOR_ACCENT:FlxColor = 0xFF61A5C2;
 	static inline var COLOR_FOAM:FlxColor = 0xFFE0FBFC;
@@ -20,6 +23,7 @@ class ReefRunnerState extends FlxState
 	var player:FlxSprite;
 	var obstacles:Array<FlxSprite> = [];
 	var scoreText:FlxText;
+	var bestText:FlxText;
 	var messageText:FlxText;
 	var backButton:FlxButton;
 
@@ -30,6 +34,7 @@ class ReefRunnerState extends FlxState
 	var spawnTimer:Float = 0;
 	var speed:Float = 260;
 	var survivalTime:Float = 0;
+	var bestDistance:Int = 0;
 	var isGameOver:Bool = false;
 	var isMobile:Bool;
 
@@ -39,6 +44,7 @@ class ReefRunnerState extends FlxState
 
 		isMobile = FlxG.onMobile;
 		bgColor = COLOR_ABYSS;
+		bestDistance = Std.int(HighScores.get(GAME_ID));
 
 		groundY = FlxG.height - 100;
 
@@ -52,6 +58,10 @@ class ReefRunnerState extends FlxState
 		scoreText = new FlxText(20, 20, 240, "Distance: 0");
 		scoreText.setFormat(null, isMobile ? 22 : 18, COLOR_FOAM, LEFT);
 		add(scoreText);
+
+		bestText = new FlxText(20, 46, 240, 'Best: $bestDistance');
+		bestText.setFormat(null, isMobile ? 18 : 14, COLOR_ACCENT, LEFT);
+		add(bestText);
 
 		messageText = new FlxText(0, FlxG.height / 2 - 40, FlxG.width, "");
 		messageText.setFormat(null, isMobile ? 32 : 26, COLOR_FOAM, CENTER);
@@ -168,7 +178,18 @@ class ReefRunnerState extends FlxState
 	function endGame():Void
 	{
 		isGameOver = true;
-		messageText.text = 'You crashed! Distance: ${Std.int(survivalTime * 20)}\nTap or press SPACE to retry';
+
+		var distance:Int = Std.int(survivalTime * 20);
+		var isNewBest:Bool = HighScores.submit(GAME_ID, distance);
+
+		if (isNewBest)
+		{
+			bestDistance = distance;
+			bestText.text = 'Best: $bestDistance';
+		}
+
+		var baseMessage:String = 'You crashed! Distance: $distance';
+		messageText.text = (isNewBest ? '$baseMessage\nNew best distance!' : baseMessage) + '\nTap or press SPACE to retry';
 	}
 
 	function handleRestartInput():Void

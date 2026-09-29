@@ -6,9 +6,12 @@ import flixel.FlxSprite;
 import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
+import shark.backend.HighScores;
 
 class DeepDiveState extends FlxState
 {
+	static inline var GAME_ID:String = "deep_dive";
+
 	static inline var COLOR_ABYSS:FlxColor = 0xFF00111F;
 	static inline var COLOR_DEEP:FlxColor = 0xFF012A4A;
 	static inline var COLOR_ACCENT:FlxColor = 0xFF61A5C2;
@@ -18,12 +21,14 @@ class DeepDiveState extends FlxState
 	var player:FlxSprite;
 	var rocks:Array<FlxSprite> = [];
 	var depthText:FlxText;
+	var bestText:FlxText;
 	var messageText:FlxText;
 	var backButton:FlxButton;
 
 	var depth:Float = 0;
 	var descendSpeed:Float = 120;
 	var spawnTimer:Float = 0;
+	var bestDepth:Int = 0;
 	var isGameOver:Bool = false;
 	var isMobile:Bool;
 
@@ -33,6 +38,7 @@ class DeepDiveState extends FlxState
 
 		isMobile = FlxG.onMobile;
 		bgColor = COLOR_DEEP;
+		bestDepth = Std.int(HighScores.get(GAME_ID));
 
 		player = new FlxSprite(FlxG.width / 2 - 15, 80);
 		player.makeGraphic(30, 30, COLOR_FOAM);
@@ -41,6 +47,10 @@ class DeepDiveState extends FlxState
 		depthText = new FlxText(20, 20, 240, "Depth: 0m");
 		depthText.setFormat(null, isMobile ? 22 : 18, COLOR_FOAM, LEFT);
 		add(depthText);
+
+		bestText = new FlxText(20, 46, 240, 'Best: ${bestDepth}m');
+		bestText.setFormat(null, isMobile ? 18 : 14, COLOR_ACCENT, LEFT);
+		add(bestText);
 
 		messageText = new FlxText(0, FlxG.height / 2 - 40, FlxG.width, "");
 		messageText.setFormat(null, isMobile ? 32 : 26, COLOR_FOAM, CENTER);
@@ -151,7 +161,18 @@ class DeepDiveState extends FlxState
 	function endGame():Void
 	{
 		isGameOver = true;
-		messageText.text = 'You hit a rock! Depth reached: ${Std.int(depth)}m\nTap or press SPACE to retry';
+
+		var reached:Int = Std.int(depth);
+		var isNewBest:Bool = HighScores.submit(GAME_ID, reached);
+
+		if (isNewBest)
+		{
+			bestDepth = reached;
+			bestText.text = 'Best: ${bestDepth}m';
+		}
+
+		var baseMessage:String = 'You hit a rock! Depth reached: ${reached}m';
+		messageText.text = (isNewBest ? '$baseMessage\nNew best depth!' : baseMessage) + '\nTap or press SPACE to retry';
 	}
 
 	function handleRestartInput():Void

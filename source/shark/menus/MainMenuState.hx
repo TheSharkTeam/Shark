@@ -50,7 +50,6 @@ class MainMenuState extends FlxState
 	static inline var COLOR_WARNING:FlxColor = 0xFFFFD166;
 
 	var inputField:FlxInputText;
-	var historyText:FlxText;
 	var titleText:FlxText;
 	var sendButton:FlxButton;
 	var muteButton:FlxButton;
@@ -59,6 +58,7 @@ class MainMenuState extends FlxState
 	var boostButton:FlxButton;
 	var debugButton:FlxButton;
 	var charCounterText:FlxText;
+	var commandHintText:FlxText;
 
 	var inputFieldBaseY:Float;
 	var sendButtonBaseY:Float;
@@ -73,12 +73,16 @@ class MainMenuState extends FlxState
 	var kelpBlades:Array<{sprite:FlxSprite, offset:Float, speed:Float}> = [];
 	var bubbles:Array<FlxSprite> = [];
 	var imageSprites:Array<FlxSprite> = [];
+	var historyLines:Array<FlxText> = [];
 
-	var conversation:Array<String> = [];
+	var conversation:Array<{speaker:String, text:String, color:FlxColor}> = [];
 	var isMobile:Bool;
 	var thinkingElapsed:Float = 0;
 	var latencyRefreshTimer:Float = 0;
 	var historyPad:Int;
+	var historyContentX:Float;
+	var historyContentY:Float;
+	var historyContentWidth:Float;
 
 	static inline var LATENCY_REFRESH_INTERVAL:Float = 15;
 
@@ -118,8 +122,9 @@ class MainMenuState extends FlxState
 		historyBorder.pixels = GraphicGit.createRoundedRectBorder(Std.int(FlxG.width - (historyPad - 10) * 2), historyHeight, COLOR_ACCENT, 14, 2, 0.6);
 		add(historyBorder);
 
-		historyText = FlixelShark.makeText(historyPad, historyTop + 10, FlxG.width - historyPad * 2, "", isMobile ? 20 : 16, COLOR_FOAM, LEFT);
-		add(historyText);
+		historyContentX = historyPad;
+		historyContentY = historyTop + 10;
+		historyContentWidth = FlxG.width - historyPad * 2;
 
 		createChatControls();
 
@@ -155,7 +160,7 @@ class MainMenuState extends FlxState
 		restoreHistory();
 
 		if (conversation.length == 0)
-			appendToHistory(Language.get("app.name") + ": " + Head.getWelcomeMessage());
+			appendToHistory(Language.get("app.name"), Head.getWelcomeMessage(), COLOR_ACCENT);
 
 		if (Paths.exists(Paths.music("ocean_ambient")))
 			Audio.playMusic("ocean_ambient");
@@ -183,6 +188,9 @@ class MainMenuState extends FlxState
 
 		charCounterText = FlixelShark.makeText(historyPad, rowY - 16, inputWidth, "", 11, COLOR_ACCENT, RIGHT);
 		add(charCounterText);
+
+		commandHintText = FlixelShark.makeText(historyPad, rowY - 34, inputWidth, "", 11, COLOR_ACCENT, LEFT);
+		add(commandHintText);
 
 		inputFieldBaseY = inputField.y;
 		sendButtonBaseY = sendButton.y;
@@ -250,11 +258,15 @@ class MainMenuState extends FlxState
 
 		for (entry in ChatEngine.getHistory())
 		{
-			var speaker:String = entry.role == "user" ? "You" : "Shark";
-			conversation.push('$speaker: ${entry.content}');
+			var isUser:Bool = entry.role == "user";
+			conversation.push({
+				speaker: isUser ? Language.get("chat.you") : Language.get("app.name"),
+				text: entry.content,
+				color: isUser ? COLOR_FOAM : COLOR_ACCENT
+			});
 		}
 
-		historyText.text = conversation.join("\n");
+		rebuildHistoryDisplay();
 	}
 
 	function createLightRays():Void
@@ -318,6 +330,7 @@ class MainMenuState extends FlxState
 		}
 
 		updateCharCounter();
+		updateCommandHint();
 
 		if (!isMobile && FlxG.keys.justPressed.ENTER && inputField.text.length > 0)
 			sendMessage(inputField.text);
@@ -370,7 +383,7 @@ class MainMenuState extends FlxState
 
 	function sendMessage(message:String):Void
 	{
-		appendToHistory(Language.get("chat.you") + ": " + message);
+		appendToHistory(Language.get("chat.you"), message, COLOR_FOAM);
 		inputField.text = "";
 		body.reactToMessageSent();
 
@@ -380,7 +393,7 @@ class MainMenuState extends FlxState
 				? Language.get("chat.notConfigured")
 				: Language.get("chat.blockedEndpoint");
 
-			appendToHistory(Language.get("app.name") + ": " + reason);
+			appendToHistory(Language.get("app.name"), reason, COLOR_ACCENT);
 			body.reactToError();
 			return;
 		}
@@ -412,7 +425,7 @@ class MainMenuState extends FlxState
 
 	function onReply(reply:String):Void
 	{
-		appendToHistory(Language.get("app.name") + ": " + reply);
+		appendToHistory(Language.get("app.name"), reply, COLOR_ACCENT);
 		Audio.play("message_receive");
 		sendButton.alive = Internet.isConnected;
 		body.reactToReplyReceived();
@@ -420,7 +433,7 @@ class MainMenuState extends FlxState
 
 	function onError(error:String):Void
 	{
-		appendToHistory("Error: " + error);
+		appendToHistory("Error", error, COLOR_DANGER);
 		sendButton.alive = Internet.isConnected;
 		body.reactToError();
 	}
@@ -432,14 +445,14 @@ class MainMenuState extends FlxState
 		add(sprite);
 		imageSprites.push(sprite);
 
-		appendToHistory(Language.get("app.name") + ": " + Language.get("chat.imageGenerated"));
+		appendToHistory(Language.get("app.name"), Language.get("chat.imageGenerated"), COLOR_ACCENT);
 		Audio.play("message_receive");
 		body.reactToReplyReceived();
 	}
 
 	function onImageError(error:String):Void
 	{
-		appendToHistory("Error generating image: " + error);
+		appendToHistory("Error", "generating image: " + error, COLOR_DANGER);
 		body.reactToError();
 	}
 
@@ -455,14 +468,14 @@ class MainMenuState extends FlxState
 		Head.reset();
 
 		conversation = [];
-		historyText.text = "";
+		rebuildHistoryDisplay();
 
 		for (sprite in imageSprites)
 			remove(sprite, true);
 
 		imageSprites = [];
 
-		appendToHistory(Language.get("app.name") + ": " + Head.getWelcomeMessage());
+		appendToHistory(Language.get("app.name"), Head.getWelcomeMessage(), COLOR_ACCENT);
 		pulseButton(newChatButton);
 	}
 
@@ -511,13 +524,67 @@ class MainMenuState extends FlxState
 		thinkingElapsed = 0;
 		body.setState(thinking ? THINKING : IDLE);
 
-		if (!thinking)
+		FlxTween.cancelTweensOf(thinkingText);
+
+		if (thinking)
+		{
+			thinkingText.alpha = 1;
+			FlxTween.tween(thinkingText, {alpha: 0.4}, 0.6, {ease: FlxEase.sineInOut, type: PINGPONG});
+		}
+		else
+		{
+			thinkingText.alpha = 1;
 			thinkingText.text = "";
+		}
 	}
 
-	function appendToHistory(line:String):Void
+	function appendToHistory(speaker:String, text:String, color:FlxColor):Void
 	{
-		conversation.push(line);
-		historyText.text = conversation.join("\n");
+		conversation.push({speaker: speaker, text: text, color: color});
+		rebuildHistoryDisplay();
+	}
+
+	function rebuildHistoryDisplay():Void
+	{
+		for (line in historyLines)
+			remove(line, true);
+
+		historyLines = [];
+
+		var y:Float = historyContentY;
+
+		for (entry in conversation)
+		{
+			var line:FlxText = FlixelShark.makeText(historyContentX, y, historyContentWidth, '${entry.speaker}: ${entry.text}', isMobile ? 20 : 16,
+				entry.color, LEFT);
+			add(line);
+			historyLines.push(line);
+
+			y += line.height + 6;
+		}
+	}
+
+	function updateCommandHint():Void
+	{
+		if (commandHintText == null || inputField == null)
+			return;
+
+		var trimmed:String = StringTools.trim(inputField.text);
+
+		if (trimmed.length == 0 || (trimmed.charAt(0) != "/" && trimmed.charAt(0) != "!"))
+		{
+			commandHintText.text = "";
+			return;
+		}
+
+		var spaceIndex:Int = trimmed.indexOf(" ");
+		var typed:String = (spaceIndex == -1 ? trimmed : trimmed.substr(0, spaceIndex)).toLowerCase();
+		var matches:Array<String> = [];
+
+		for (command in Head.getAvailableCommands())
+			if (StringTools.startsWith(command, typed))
+				matches.push(command);
+
+		commandHintText.text = matches.join("  ");
 	}
 }

@@ -2,7 +2,7 @@ package shark.online;
 
 import haxe.Json;
 import haxe.Timer;
-import shark.mobile.backend.HapticStyle;
+import shark.mobile.backend.Vibration.HapticStyle;
 import shark.mobile.backend.Vibration;
 import shark.online.Network;
 import shark.online.NetworkResponse;

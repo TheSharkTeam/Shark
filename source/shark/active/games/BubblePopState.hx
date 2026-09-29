@@ -7,9 +7,12 @@ import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
 import flixel.math.FlxPoint;
+import shark.backend.HighScores;
 
 class BubblePopState extends FlxState
 {
+	static inline var GAME_ID:String = "bubble_pop";
+
 	static inline var COLOR_ABYSS:FlxColor = 0xFF00111F;
 	static inline var COLOR_ACCENT:FlxColor = 0xFF61A5C2;
 	static inline var COLOR_FOAM:FlxColor = 0xFFE0FBFC;
@@ -22,11 +25,13 @@ class BubblePopState extends FlxState
 	var scoreText:FlxText;
 	var missesText:FlxText;
 	var timeText:FlxText;
+	var bestText:FlxText;
 	var messageText:FlxText;
 	var backButton:FlxButton;
 
 	var score:Int = 0;
 	var misses:Int = 0;
+	var bestScore:Int = 0;
 	var timeLeft:Float = ROUND_SECONDS;
 	var spawnTimer:Float = 0;
 	var isGameOver:Bool = false;
@@ -38,6 +43,7 @@ class BubblePopState extends FlxState
 
 		isMobile = FlxG.onMobile;
 		bgColor = COLOR_ABYSS;
+		bestScore = Std.int(HighScores.get(GAME_ID));
 
 		scoreText = new FlxText(20, 20, 200, "Score: 0");
 		scoreText.setFormat(null, isMobile ? 22 : 18, COLOR_FOAM, LEFT);
@@ -50,6 +56,10 @@ class BubblePopState extends FlxState
 		timeText = new FlxText(FlxG.width - 140, 20, 120, "");
 		timeText.setFormat(null, isMobile ? 22 : 18, COLOR_FOAM, RIGHT);
 		add(timeText);
+
+		bestText = new FlxText(FlxG.width - 140, 46, 120, 'Best: $bestScore');
+		bestText.setFormat(null, isMobile ? 18 : 14, COLOR_ACCENT, RIGHT);
+		add(bestText);
 
 		messageText = new FlxText(0, FlxG.height / 2 - 40, FlxG.width, "");
 		messageText.setFormat(null, isMobile ? 32 : 26, COLOR_FOAM, CENTER);
@@ -173,7 +183,17 @@ class BubblePopState extends FlxState
 	function endGame(completedRound:Bool):Void
 	{
 		isGameOver = true;
-		messageText.text = completedRound ? 'Time up! Final score: $score' : 'Too many escaped! Score: $score';
+
+		var isNewBest:Bool = HighScores.submit(GAME_ID, score);
+
+		if (isNewBest)
+		{
+			bestScore = score;
+			bestText.text = 'Best: $bestScore';
+		}
+
+		var baseMessage:String = completedRound ? 'Time up! Final score: $score' : 'Too many escaped! Score: $score';
+		messageText.text = isNewBest ? '$baseMessage\nNew best score!' : baseMessage;
 	}
 
 	function onBackPressed():Void

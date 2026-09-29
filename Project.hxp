@@ -1864,8 +1864,8 @@ class Project extends HXProject
 				"set -e\n" +
 				'ARCHIVE_NAME="shark-${meta.version}-$platformFolder.zip"\n' +
 				'cd "export/$platformFolder"\n' +
-				'zip -r "../../$ARCHIVE_NAME" . -x ".*"\n' +
-				'echo "Created $ARCHIVE_NAME"\n';
+				'zip -r "../../$$ARCHIVE_NAME" . -x ".*"\n' +
+				'echo "Created $$ARCHIVE_NAME"\n';
 
 			File.saveContent('$hookDir/post_build_$platformFolder.sh', shellScript);
 
