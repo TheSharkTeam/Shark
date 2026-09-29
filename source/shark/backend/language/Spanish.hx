@@ -12,6 +12,8 @@ class Spanish
 		"menu.optionsButton" => "Opciones",
 		"menu.backButton" => "Volver",
 		"menu.thinking" => "Shark está pensando",
+		"intro.tagline" => "Tu compañero de IA, en las profundidades",
+		"intro.tapToContinue" => "Toca para continuar",
 		"menu.online" => "En línea",
 		"menu.offline" => "Sin conexión",
 		"chat.you" => "Tú",

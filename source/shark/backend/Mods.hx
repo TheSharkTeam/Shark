@@ -1,10 +1,13 @@
 package shark.backend;
 
+import openfl.display.BitmapData;
 import shark.active.system.Body;
 import shark.active.system.BodyState;
 import shark.active.system.Head;
+import shark.active.system.Head.CommandRequest;
 import shark.audio.Audio;
 import shark.data.DataFile;
+import shark.functions.ImageCreator;
 import shark.mobile.backend.Vibration.HapticStyle;
 import shark.mobile.backend.Vibration;
 import shark.modding.Module;
@@ -120,6 +123,38 @@ class Mods
 		mod.bind("getImageCount", function():Int
 		{
 			return Head.totalImages;
+		});
+
+		mod.bind("sendMessage", function(message:String, onReply:String->Void, ?onError:String->Void):Void
+		{
+			if (!ModVersion.isFeatureSupported(AI_API_ACCESS))
+				return;
+
+			Head.think(message, onReply, onError != null ? onError : function(_:String):Void {});
+		});
+
+		mod.bind("registerCommand", function(name:String, handler:(String, String->Void)->Void):Void
+		{
+			if (!ModVersion.isFeatureSupported(AI_API_ACCESS))
+				return;
+
+			Head.registerCommand(name, function(request:CommandRequest):Void
+			{
+				handler(request.args, request.onReply);
+			});
+		});
+
+		mod.bind("getRegisteredCommands", function():Array<String>
+		{
+			return Head.getAvailableCommands();
+		});
+
+		mod.bind("generateImage", function(prompt:String, onComplete:BitmapData->Void, ?onError:String->Void):Void
+		{
+			if (!ModVersion.isFeatureSupported(AI_API_ACCESS))
+				return;
+
+			ImageCreator.generate(prompt, onComplete, onError != null ? onError : function(_:String):Void {});
 		});
 
 		mod.bind("bodyIdle", function():Void

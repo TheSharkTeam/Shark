@@ -12,6 +12,8 @@ class English
 		"menu.optionsButton" => "Options",
 		"menu.backButton" => "Back",
 		"menu.thinking" => "Shark is thinking",
+		"intro.tagline" => "Your AI companion, right in the deep",
+		"intro.tapToContinue" => "Tap to continue",
 		"menu.online" => "Online",
 		"menu.offline" => "Offline",
 		"chat.you" => "You",

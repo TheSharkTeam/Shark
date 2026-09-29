@@ -253,6 +253,7 @@ class OptionsState extends FlxState
 		var nextIndex:Int = (currentIndex + 1) % list.length;
 
 		Language.setLanguage(list[nextIndex]);
+		shark.modding.ModuleHandler.notifyLanguageChanged(list[nextIndex]);
 
 		FlixelShark.switchState(new OptionsState(), false);
 	}

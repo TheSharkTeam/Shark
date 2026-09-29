@@ -24,6 +24,7 @@ import shark.backend.Language;
 import shark.backend.Paths;
 import shark.functions.ChatEngine;
 import shark.menus.options.OptionsState;
+import shark.modding.ModuleHandler;
 import shark.online.Online;
 import shark.online.manager.Internet;
 import shark.mobile.ui.AndroidKeyboard;
@@ -386,6 +387,7 @@ class MainMenuState extends FlxState
 		appendToHistory(Language.get("chat.you"), message, COLOR_FOAM);
 		inputField.text = "";
 		body.reactToMessageSent();
+		ModuleHandler.notifyMessageSent(message);
 
 		if (!isChatConfigured() && !isLocalCommand(message))
 		{
@@ -429,6 +431,7 @@ class MainMenuState extends FlxState
 		Audio.play("message_receive");
 		sendButton.alive = Internet.isConnected;
 		body.reactToReplyReceived();
+		ModuleHandler.notifyReplyReceived(reply);
 	}
 
 	function onError(error:String):Void
@@ -436,6 +439,7 @@ class MainMenuState extends FlxState
 		appendToHistory("Error", error, COLOR_DANGER);
 		sendButton.alive = Internet.isConnected;
 		body.reactToError();
+		ModuleHandler.notifyError(error);
 	}
 
 	function onImageGenerated(bitmap:BitmapData):Void
@@ -448,6 +452,7 @@ class MainMenuState extends FlxState
 		appendToHistory(Language.get("app.name"), Language.get("chat.imageGenerated"), COLOR_ACCENT);
 		Audio.play("message_receive");
 		body.reactToReplyReceived();
+		ModuleHandler.notifyImageGenerated();
 	}
 
 	function onImageError(error:String):Void

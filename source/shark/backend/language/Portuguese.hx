@@ -12,6 +12,8 @@ class Portuguese
 		"menu.optionsButton" => "Opções",
 		"menu.backButton" => "Voltar",
 		"menu.thinking" => "Shark está pensando",
+		"intro.tagline" => "Seu companheiro de IA, lá no fundo do mar",
+		"intro.tapToContinue" => "Toque para continuar",
 		"menu.online" => "Online",
 		"menu.offline" => "Offline",
 		"chat.you" => "Você",

@@ -9,6 +9,8 @@ enum abstract ModApiFeature(String) to String
 	var CRASH_BREADCRUMBS = "crashBreadcrumbs";
 	var MOD_STORAGE = "modStorage";
 	var CONNECTIVITY_STATUS = "connectivityStatus";
+	var AI_API_ACCESS = "aiApiAccess";
+	var INTRO_HOOKS = "introHooks";
 }
 
 typedef SemVer = {
@@ -27,7 +29,7 @@ typedef VersionEntry = {
 
 class ModVersion
 {
-	public static inline var CURRENT:String = "0.2.0";
+	public static inline var CURRENT:String = "0.3.0";
 	public static inline var MIN_SUPPORTED:String = "0.1.0";
 
 	public static var history(default, null):Array<VersionEntry> = [
@@ -44,6 +46,13 @@ class ModVersion
 			deprecated: ["Mods.legacyUpdateHook"],
 			removed: [],
 			notes: "Adds haptics access, crash log breadcrumbs, per-mod persistent storage, and connectivity status for mods."
+		},
+		{
+			version: "0.3.0",
+			releasedFeatures: [AI_API_ACCESS, INTRO_HOOKS],
+			deprecated: [],
+			removed: [],
+			notes: "Adds an AI scripting API - mods can send chat messages, register new chat commands, and generate images - plus intro sequence lifecycle hooks."
 		}
 	];
 

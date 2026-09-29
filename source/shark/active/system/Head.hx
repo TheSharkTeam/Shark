@@ -345,6 +345,7 @@ class Head
 			return;
 		}
 
+		shark.modding.ModuleHandler.notifyLanguageChanged(code);
 		request.onReply(Language.get("head.languageChanged", ["language" => Language.getLanguageName(code)]));
 	}
 

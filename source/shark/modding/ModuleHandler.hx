@@ -89,4 +89,19 @@ class ModuleHandler
 	{
 		Mods.callHookOnAll("onLanguageChanged", [languageCode]);
 	}
+
+	public static function notifyIntroStart():Void
+	{
+		Mods.callHookOnAll("onIntroStart");
+	}
+
+	public static function notifyIntroSkip():Void
+	{
+		Mods.callHookOnAll("onIntroSkip");
+	}
+
+	public static function notifyIntroComplete():Void
+	{
+		Mods.callHookOnAll("onIntroComplete");
+	}
 }
