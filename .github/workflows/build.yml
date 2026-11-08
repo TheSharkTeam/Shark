@@ -5,12 +5,13 @@ on:
     branches:
       - main
       - dev
+    tags:
+      - "v*"
     paths-ignore:
       - "**.md"
       - "LICENSE"
       - "arts/**"
-    tags:
-      - "v*"
+
   pull_request:
     branches:
       - main
@@ -18,22 +19,11 @@ on:
       - "**.md"
       - "LICENSE"
       - "arts/**"
+
   workflow_dispatch:
     inputs:
-      target:
-        description: "Which platform to build (leave as 'all' to build everything)"
-        required: true
-        default: "all"
-        type: choice
-        options:
-          - all
-          - windows
-          - android
-          - linux
-          - mac
-          - ios
       environment:
-        description: "Override SHARK_ENV (leave as 'auto' to infer from the branch/tag)"
+        description: "Build environment"
         required: true
         default: "auto"
         type: choice
@@ -42,8 +32,9 @@ on:
           - dev
           - staging
           - production
+
       create_release:
-        description: "Publish a GitHub release from this run (only takes effect when run against a v* tag)"
+        description: "Create GitHub release (v* tags only)"
         required: true
         default: "no"
         type: choice
@@ -64,103 +55,33 @@ env:
   HXCPP_COMPILE_CACHE: ${{ github.workspace }}/.hxcpp_cache
 
 jobs:
-  build-windows:
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'windows'
-    runs-on: windows-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Print build context
-        run: |
-          echo "Ref: ${{ github.ref }} (${{ github.ref_name }})"
-          echo "Commit: ${{ github.sha }}"
-          echo "Event: ${{ github.event_name }}"
-
-      - name: Resolve environment
-        uses: ./.github/actions/resolve-environment
-        with:
-          environment-input: ${{ github.event.inputs.environment }}
-
-      - name: Set version from tag
-        uses: ./.github/actions/set-version
-
-      - name: Cache hxcpp compile cache
-        uses: actions/cache@v4
-        with:
-          path: .hxcpp_cache
-          key: ${{ runner.os }}-hxcpp-windows-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-hxcpp-windows-
-
-      - name: Setup toolchain
-        uses: ./.github/actions/setup-toolchain
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
-
-      - name: Ensure config.json exists
-        uses: ./.github/actions/ensure-config
-
-      - name: Build Windows
-        uses: ./.github/actions/build-retry
-        timeout-minutes: 15
-        with:
-          target: windows
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shark-Windows-logs
-          path: |
-            export/**/*.log
-            *.log
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shark-Windows
-          path: export/windows/bin
-          retention-days: 7
-
   build-android:
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'android'
+    name: Build Android
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Print build context
-        run: |
-          echo "Ref: ${{ github.ref }} (${{ github.ref_name }})"
-          echo "Commit: ${{ github.sha }}"
-          echo "Event: ${{ github.event_name }}"
-
       - name: Resolve environment
         uses: ./.github/actions/resolve-environment
         with:
-          environment-input: ${{ github.event.inputs.environment }}
+          environment-input: ${{ inputs.environment || 'auto' }}
 
       - name: Set version from tag
         uses: ./.github/actions/set-version
 
-      - name: Cache hxcpp compile cache
+      - name: Cache hxcpp
         uses: actions/cache@v4
         with:
           path: .hxcpp_cache
-          key: ${{ runner.os }}-hxcpp-android-${{ github.sha }}
+          key: android-hxcpp-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-hxcpp-android-
+            android-hxcpp-${{ runner.os }}-
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -169,18 +90,19 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Install Android NDK
-        run: sdkmanager --install "ndk;${{ env.ANDROID_NDK_VERSION }}"
+        run: |
+          sdkmanager --install "ndk;${ANDROID_NDK_VERSION}"
 
-      - name: Setup toolchain
+      - name: Setup Haxe toolchain
         uses: ./.github/actions/setup-toolchain
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
           skip-lime-setup: "true"
 
-      - name: Configure Lime for Android
+      - name: Configure Lime Android
         run: |
           haxelib run lime config ANDROID_SDK "$ANDROID_HOME"
-          haxelib run lime config ANDROID_NDK_ROOT "$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}"
+          haxelib run lime config ANDROID_NDK_ROOT "$ANDROID_HOME/ndk/${ANDROID_NDK_VERSION}"
           haxelib run lime config JAVA_HOME "$JAVA_HOME"
           haxelib run lime setup -y android
 
@@ -188,19 +110,28 @@ jobs:
         uses: ./.github/actions/ensure-config
 
       - name: Prepare Android keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          KEYSTORE_ALIAS_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_ALIAS_PASSWORD }}
+        shell: bash
         run: |
           mkdir -p Certificates
 
-          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > Certificates/android.keystore
-            echo "SHARK_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
-            echo "SHARK_KEYSTORE_ALIAS=${{ secrets.ANDROID_KEYSTORE_ALIAS }}" >> "$GITHUB_ENV"
-            echo "SHARK_KEYSTORE_ALIAS_PASSWORD=${{ secrets.ANDROID_KEYSTORE_ALIAS_PASSWORD }}" >> "$GITHUB_ENV"
-          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "::error::Tagged release build requires ANDROID_KEYSTORE_BASE64 and related secrets to be configured - refusing to sign a release with a throwaway keystore."
+          if [[ -n "$KEYSTORE_BASE64" ]]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > Certificates/android.keystore
+
+            echo "SHARK_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "SHARK_KEYSTORE_ALIAS=$KEYSTORE_ALIAS" >> "$GITHUB_ENV"
+            echo "SHARK_KEYSTORE_ALIAS_PASSWORD=$KEYSTORE_ALIAS_PASSWORD" >> "$GITHUB_ENV"
+
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "::error::Release requires Android signing secrets"
             exit 1
+
           else
-            keytool -genkeypair -v \
+            keytool -genkeypair \
               -keystore Certificates/android.keystore \
               -alias android \
               -storepass android \
@@ -208,336 +139,88 @@ jobs:
               -keyalg RSA \
               -keysize 2048 \
               -validity 10000 \
-              -dname "CN=Shark, OU=Brenninho, O=Brenninho, L=Unknown, S=Unknown, C=BR"
+              -dname "CN=Shark, OU=TheSharkTeam, O=TheSharkTeam, L=Unknown, S=Unknown, C=BR"
+
+            echo "SHARK_KEYSTORE_PASSWORD=android" >> "$GITHUB_ENV"
+            echo "SHARK_KEYSTORE_ALIAS=android" >> "$GITHUB_ENV"
+            echo "SHARK_KEYSTORE_ALIAS_PASSWORD=android" >> "$GITHUB_ENV"
           fi
 
-      - name: Build Android
+      - name: Build Android APK
         uses: ./.github/actions/build-retry
-        timeout-minutes: 15
+        timeout-minutes: 25
         with:
           target: android
 
-      - name: Upload build logs on failure
+      - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: Shark-Android-logs
+          name: Shark-Android-Logs
           path: |
             export/**/*.log
             *.log
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Upload artifact
+      - name: Upload Android APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Shark-Android
-          path: export/android/bin/app/build/outputs/apk
-          retention-days: 7
-
-  build-linux:
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'linux'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Print build context
-        run: |
-          echo "Ref: ${{ github.ref }} (${{ github.ref_name }})"
-          echo "Commit: ${{ github.sha }}"
-          echo "Event: ${{ github.event_name }}"
-
-      - name: Resolve environment
-        uses: ./.github/actions/resolve-environment
-        with:
-          environment-input: ${{ github.event.inputs.environment }}
-
-      - name: Set version from tag
-        uses: ./.github/actions/set-version
-
-      - name: Cache hxcpp compile cache
-        uses: actions/cache@v4
-        with:
-          path: .hxcpp_cache
-          key: ${{ runner.os }}-hxcpp-linux-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-hxcpp-linux-
-
-      - name: Install native build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            g++ \
-            libgl1-mesa-dev \
-            libglu1-mesa-dev \
-            libasound2-dev \
-            libxrandr-dev \
-            libxi-dev \
-            libxinerama-dev \
-            libxcursor-dev \
-            libvlc-dev \
-            libvlccore-dev \
-            vlc
-
-      - name: Setup toolchain
-        uses: ./.github/actions/setup-toolchain
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
-
-      - name: Ensure config.json exists
-        uses: ./.github/actions/ensure-config
-
-      - name: Build Linux
-        uses: ./.github/actions/build-retry
-        timeout-minutes: 15
-        with:
-          target: linux
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shark-Linux-logs
           path: |
-            export/**/*.log
-            *.log
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shark-Linux
-          path: export/linux/bin
-          retention-days: 7
-
-  build-mac:
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'mac'
-    runs-on: macos-15-intel
-    timeout-minutes: 30
-    env:
-      HOMEBREW_NO_AUTO_UPDATE: 1
-      HOMEBREW_NO_INSTALL_CLEANUP: 1
-      HOMEBREW_NO_ENV_HINTS: 1
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        timeout-minutes: 5
-
-      - name: Print build context
-        run: |
-          echo "Ref: ${{ github.ref }} (${{ github.ref_name }})"
-          echo "Commit: ${{ github.sha }}"
-          echo "Event: ${{ github.event_name }}"
-
-      - name: Resolve environment
-        uses: ./.github/actions/resolve-environment
-        with:
-          environment-input: ${{ github.event.inputs.environment }}
-
-      - name: Set version from tag
-        uses: ./.github/actions/set-version
-
-      - name: Cache hxcpp compile cache
-        uses: actions/cache@v4
-        with:
-          path: .hxcpp_cache
-          key: ${{ runner.os }}-hxcpp-mac-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-hxcpp-mac-
-
-      - name: Setup toolchain
-        uses: ./.github/actions/setup-toolchain
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
-        timeout-minutes: 10
-
-      - name: Ensure config.json exists
-        uses: ./.github/actions/ensure-config
-
-      - name: Build macOS
-        uses: ./.github/actions/build-retry
-        timeout-minutes: 15
-        with:
-          target: mac
-
-      - name: List build output for debugging
-        if: always()
-        run: |
-          echo "--- top-level repo contents ---"
-          ls -la
-          echo "--- export directory (if any) ---"
-          find export -maxdepth 4 2>/dev/null || echo "no export directory found"
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shark-macOS-logs
-          path: |
-            export/**/*.log
-            *.log
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shark-macOS
-          path: export
-          retention-days: 7
-          if-no-files-found: warn
-
-  build-ios:
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'ios'
-    runs-on: macos-15-intel
-    timeout-minutes: 30
-    env:
-      HOMEBREW_NO_AUTO_UPDATE: 1
-      HOMEBREW_NO_INSTALL_CLEANUP: 1
-      HOMEBREW_NO_ENV_HINTS: 1
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        timeout-minutes: 5
-
-      - name: Print build context
-        run: |
-          echo "Ref: ${{ github.ref }} (${{ github.ref_name }})"
-          echo "Commit: ${{ github.sha }}"
-          echo "Event: ${{ github.event_name }}"
-
-      - name: Resolve environment
-        uses: ./.github/actions/resolve-environment
-        with:
-          environment-input: ${{ github.event.inputs.environment }}
-
-      - name: Set version from tag
-        uses: ./.github/actions/set-version
-
-      - name: Cache hxcpp compile cache
-        uses: actions/cache@v4
-        with:
-          path: .hxcpp_cache
-          key: ${{ runner.os }}-hxcpp-ios-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-hxcpp-ios-
-
-      - name: Setup toolchain
-        uses: ./.github/actions/setup-toolchain
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
-        timeout-minutes: 10
-
-      - name: Ensure config.json exists
-        uses: ./.github/actions/ensure-config
-
-      - name: Select Xcode
-        uses: ./.github/actions/select-xcode
-
-      - name: Build iOS (simulator)
-        uses: ./.github/actions/build-retry
-        timeout-minutes: 15
-        with:
-          target: ios
-          extra-args: "-simulator"
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shark-iOS-logs
-          path: |
-            export/**/*.log
-            *.log
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shark-iOS
-          path: export/ios/build/Release-iphonesimulator
-          retention-days: 7
+            export/android/bin/app/build/outputs/apk/**/*.apk
+            export/android/bin/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
 
   build-summary:
+    name: Build Summary
     if: always()
-    needs:
-      - build-windows
-      - build-android
-      - build-linux
-      - build-mac
-      - build-ios
+    needs: build-android
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print summary
+      - name: Generate summary
+        env:
+          BUILD_RESULT: ${{ needs.build-android.result }}
         run: |
-          echo "## Shark build summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Ran from:** \`${{ github.ref_name }}\` (${{ github.ref }})" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Commit:** \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Triggered by:** ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Platform | Result |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Windows | ${{ needs.build-windows.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Android | ${{ needs.build-android.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Linux | ${{ needs.build-linux.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| macOS | ${{ needs.build-mac.result }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| iOS (simulator) | ${{ needs.build-ios.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Shark Android Build"
+            echo ""
+            echo "**Repository:** TheSharkTeam/Shark"
+            echo "**Branch/Tag:** ${{ github.ref_name }}"
+            echo "**Commit:** ${{ github.sha }}"
+            echo ""
+            echo "| Platform | Status |"
+            echo "|---|---|"
+            echo "| Android | $BUILD_RESULT |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   create-release:
+    name: Publish Android Release
     if: >-
       github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.create_release == 'yes' &&
+      inputs.create_release == 'yes' &&
       startsWith(github.ref, 'refs/tags/v') &&
-      needs.build-windows.result == 'success' &&
-      needs.build-android.result == 'success' &&
-      needs.build-linux.result == 'success' &&
-      needs.build-mac.result == 'success' &&
-      needs.build-ios.result == 'success'
-    needs:
-      - build-windows
-      - build-android
-      - build-linux
-      - build-mac
-      - build-ios
+      needs.build-android.result == 'success'
+    needs: build-android
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
+      - name: Download Android APK
         uses: actions/download-artifact@v4
         with:
-          path: release-artifacts
+          name: Shark-Android
+          path: release-apk
 
-      - name: Package artifacts as zips
-        run: |
-          cd release-artifacts
-          for dir in */; do
-            name="${dir%/}"
-            (cd "$name" && zip -r "../${name}.zip" .)
-          done
-          ls -la
-
-      - name: Create GitHub release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: Shark ${{ github.ref_name }}
           generate_release_notes: true
-          files: release-artifacts/*.zip
-          fail_on_unmatched_files: false
+          files: release-apk/**/*.apk
+          fail_on_unmatched_files: true
