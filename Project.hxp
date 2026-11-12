@@ -88,7 +88,7 @@ class Project extends HXProject
 	{
 		var pinned:Map<String, String> = loadPinnedVersions();
 
-		for (name in ["lime", "openfl", "flixel", "hscript", "newgrounds"])
+		for (name in ["lime", "openfl", "flixel", "hscript", "haxeui-core", "haxeui-flixel"])
 			addHaxelib(name, pinned);
 
 		if (target == ANDROID)
@@ -127,6 +127,7 @@ class Project extends HXProject
 	{
 		includeAssets("assets/images", "assets/images");
 		includeAssets("assets/data", "assets/data");
+		includeAssets("assets/ui", "assets/ui");
 
 		for (folder in OPTIONAL_ASSET_FOLDERS)
 			if (hasFiles(folder))

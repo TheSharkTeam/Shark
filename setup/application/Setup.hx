@@ -267,7 +267,6 @@ class Setup
 			+ "\t\t\"clientId\": \"\"\n"
 			+ "\t},\n"
 			+ "\t\"platforms\": {\n"
-			+ "\t\t\"newgrounds\": { \"enabled\": false, \"appId\": \"\" },\n"
 			+ "\t\t\"googlePlayGames\": { \"enabled\": false },\n"
 			+ "\t\t\"admob\": { \"enabled\": false },\n"
 			+ "\t\t\"countryDetection\": { \"enabled\": false }\n"

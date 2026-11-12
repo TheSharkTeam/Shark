@@ -1,0 +1,8 @@
+<hbox width="100%" styleName="panel" style="spacing: 16px;">
+	<label id="iconBadge" styleName="badge" verticalAlign="center" />
+	<vbox width="100%" style="spacing: 4px;">
+		<label id="nameLabel" styleName="row-title" />
+		<label id="descriptionLabel" styleName="muted" width="100%" />
+	</vbox>
+	<button id="playButton" verticalAlign="center" />
+</hbox>

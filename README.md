@@ -29,7 +29,7 @@ The app is organized around a "brain and body" metaphor: `Head` decides how to r
 - **Native C++ utilities**: fast math, secure randomness, thread-safe counters, native boot checkpoints, CPU architecture/compiler detection, precise frame pacing
 - **Persistent, externalized configuration** (`config.json`) covering network, chat, API parameters, image generation, audio, security, connectivity, and Discord presence — kept out of version control
 - **Custom visuals**: an aquatic underwater shader (`water.frag`), procedural rounded rects/gradients/glow/soft-shadow textures, a custom cursor, dark-mode window theming (Windows), and 4K display detection with UI scale calculation
-- **Platform integrations**: Newgrounds medals/scoreboards, Google Play Games achievements/leaderboards (Android), and experimental Nintendo Switch homebrew build support
+- **Platform integrations**: Google Play Games achievements/leaderboards (Android), and experimental Nintendo Switch homebrew build support
 - **Branch-aware builds**: a `dev` branch mode (visible watermark, relaxed checks) and a `main` branch production mode (hard validation: config present, working tree clean, no merge-conflict markers, keystore present, etc.)
 - **Cross-platform builds**: Windows, Android, iOS, Linux, macOS, and HTML5, all with automated, hardened CI
 
@@ -46,7 +46,7 @@ Shark/
 │       │   ├── GameState.hx            Mini-game selection screen
 │       │   ├── games/                  BubblePop, ReefRunner, DeepDive, SharkFeedFrenzy
 │       │   └── system/                 Head (brain), Body + BodyState (avatar)
-│       ├── api/                        SharkAPI, google/GoogleClient, newgrounds/NewClient
+│       ├── api/                        SharkAPI, google/GoogleClient
 │       ├── audio/Audio.hx              Sound and music playback
 │       ├── backend/                    Paths, ClientPrefs, Language (+ language/), Mods, SharkCamera, JsonObject, HighScores
 │       ├── data/                       DataFile, license/ImageLicense
@@ -62,9 +62,9 @@ Shark/
 │       ├── server/Servers.hx           Backend server list
 │       ├── shaders/WaterShader.hx      Underwater distortion shader wrapper
 │       ├── system/                     PerformanceManager, Diagnostics, NativeSystems, WindowInput, Boost, Resolution4K, SharkSys
-│       ├── ui/                         FlixelShark, Cursor, Guard, WindowTheme, Discord, debug/ (CrasherLog, DebugDisplay, menus)
+│       ├── ui/                         FlixelShark, Cursor, Guard, WindowTheme, Discord, debug/, layouts/ (HaxeUI XML), views/ (HaxeUI view classes)
 │       └── world/Country.hx
-├── assets/                             images/, sounds/, shaders/, data/ (config.json is gitignored)
+├── assets/                             images/, sounds/, shaders/, ui/shark.css (HaxeUI theme), data/ (config.json is gitignored)
 ├── mods/                               Optional bundled mods + README
 ├── setup/application/Setup.hx          One-time project bootstrap
 ├── Project.hxp                         Lime/OpenFL project configuration
@@ -80,7 +80,7 @@ Shark/
 - [hmm](https://github.com/andywhite37/hmm) for dependency management
 - [Lime](https://lime.software/) 8.3.2, [OpenFL](https://www.openfl.org/) 9.5.2, [hxp](https://github.com/openfl/hxp), [hxcpp](https://github.com/HaxeFoundation/hxcpp) 4.3.2
 - [HaxeFlixel](https://github.com/TheSharkTeam/flixel) (TheSharkTeam fork)
-- [hscript](https://github.com/HaxeFoundation/hscript) 2.7.0, [newgrounds](https://github.com/Geokureli/Newgrounds) 2.0.3
+- [hscript](https://github.com/HaxeFoundation/hscript) 2.7.0, [haxeui-core](https://github.com/haxeui/haxeui-core) + [haxeui-flixel](https://github.com/haxeui/haxeui-flixel) (git)
 - [extension-androidtools](https://github.com/MAJigsaw77/extension-androidtools) 2.2.2 (Android only)
 
 See `hmm.json` for the full, version-pinned dependency list.
@@ -129,7 +129,7 @@ haxelib run lime build linux -final
 haxelib run lime build mac -final
 ```
 
-Windows, Linux, macOS, Android and iOS build automatically via GitHub Actions on every push, with haxelib, hxcpp, NDK and Gradle caches so repeat builds only recompile what changed. Android release builds are signed with a keystore (path/password overridable via `SHARK_KEYSTORE_*` env vars), and pushing a `v*` tag publishes every build to a GitHub release.
+Windows, Linux, macOS, Android and iOS build automatically via GitHub Actions on every push, with haxelib, hxcpp, NDK and Gradle caches so repeat builds only recompile what changed. Android release builds are signed with a keystore (path/password overridable via `SHARK_KEYSTORE_*` env vars), and the manual **Release** workflow (Actions → Release → Run workflow, with a version like `1.0.0`) builds every platform in production mode and publishes them to a `v<version>` GitHub release.
 
 The build environment (`dev`, `staging` or `production`) comes from `SHARK_ENV`, or from the git branch when it is not set (`main` → production, `staging` → staging, anything else → dev). Dev builds get a "(dev)" title suffix and a visible "Dev Build (Commit: ...)" watermark. `lime.bat release <target>` builds a production release, and `lime.bat publish <target>` does the same but only from `main`.
 
@@ -196,7 +196,7 @@ Reach the mini-game menu any time with `/play` or `!play`. Three games are inclu
 - **Reef Runner** — endless runner, jump to dodge obstacles
 - **Deep Dive** — dodge falling rocks while diving deeper
 
-All three support keyboard, mouse, touch (including swipe-as-direction on mobile), and gamepad. If configured, scores can be posted to **Newgrounds** scoreboards (web) or **Google Play Games** leaderboards (Android), and achievements can unlock through the same integrations.
+All three support keyboard, mouse, touch (including swipe-as-direction on mobile), and gamepad. If configured, scores can be posted to **Google Play Games** leaderboards (Android), and achievements can unlock through the same integrations.
 
 ## Modding
 

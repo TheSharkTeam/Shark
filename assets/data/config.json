@@ -52,7 +52,6 @@
 		"clientId": ""
 	},
 	"platforms": {
-		"newgrounds": { "enabled": false, "appId": "" },
 		"googlePlayGames": { "enabled": false },
 		"admob": { "enabled": false },
 		"countryDetection": { "enabled": false }

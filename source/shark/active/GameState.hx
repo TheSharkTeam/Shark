@@ -1,24 +1,21 @@
 package shark.active;
 
-import flixel.FlxState;
 import flixel.FlxG;
 import flixel.FlxSprite;
-import flixel.text.FlxText;
-import flixel.ui.FlxButton;
-import flixel.util.FlxColor;
-import flixel.group.FlxGroup.FlxTypedGroup;
-import flixel.tweens.FlxTween;
+import flixel.FlxState;
 import flixel.tweens.FlxEase;
-import shark.ui.FlixelShark;
-import shark.graphics.ProceduralGraphics;
-import shark.system.Resolution4K;
+import flixel.tweens.FlxTween;
+import flixel.util.FlxColor;
 import shark.active.games.BubblePopState;
-import shark.active.games.ReefRunnerState;
 import shark.active.games.DeepDiveState;
+import shark.active.games.ReefRunnerState;
 import shark.active.games.SharkFeedFrenzyState;
 import shark.backend.HighScores;
 import shark.backend.Language;
 import shark.menus.MainMenuState;
+import shark.ui.FlixelShark;
+import shark.ui.views.GameCard;
+import shark.ui.views.GameSelectView;
 
 typedef GameEntry = {
 	id:String,
@@ -26,7 +23,7 @@ typedef GameEntry = {
 	descriptionKey:String,
 	icon:String,
 	accentColor:FlxColor,
-	?createState:Void->FlxState
+	createState:Void->FlxState
 }
 
 class GameState extends FlxState
@@ -34,7 +31,6 @@ class GameState extends FlxState
 	static inline var COLOR_ABYSS:FlxColor = 0xFF00111F;
 	static inline var COLOR_DEEP:FlxColor = 0xFF012A4A;
 	static inline var COLOR_MID:FlxColor = 0xFF01497C;
-	static inline var COLOR_WAVE:FlxColor = 0xFF2C7DA0;
 	static inline var COLOR_ACCENT:FlxColor = 0xFF61A5C2;
 	static inline var COLOR_FOAM:FlxColor = 0xFFE0FBFC;
 	static inline var COLOR_KELP:FlxColor = 0xFF14746F;
@@ -42,7 +38,7 @@ class GameState extends FlxState
 	static inline var COLOR_REEF:FlxColor = 0xFFEF9F76;
 	static inline var COLOR_FISH:FlxColor = 0xFF52B788;
 
-	var games:Array<GameEntry> = [
+	static final GAMES:Array<GameEntry> = [
 		{
 			id: "bubble_pop",
 			titleKey: "games.bubblePop",
@@ -77,126 +73,56 @@ class GameState extends FlxState
 		}
 	];
 
-	var buttonGroup:FlxTypedGroup<FlxButton>;
-	var titleText:FlxText;
-	var subtitleText:FlxText;
-	var backButton:FlxButton;
-	var isMobile:Bool;
-
-	var cardSprites:Array<{sprite:FlxSprite, baseY:Float, offset:Float}> = [];
+	var view:GameSelectView;
 	var bubbles:Array<FlxSprite> = [];
 	var kelpBlades:Array<{sprite:FlxSprite, offset:Float, speed:Float}> = [];
-	var lightRays:Array<FlxSprite> = [];
 
 	override public function create():Void
 	{
 		super.create();
 
-		isMobile = FlxG.onMobile;
+		var isMobile:Bool = FlxG.onMobile;
+
 		bgColor = COLOR_ABYSS;
 
 		FlixelShark.createDepthGradient(this, [COLOR_ABYSS, COLOR_DEEP, COLOR_MID]);
-		lightRays = FlixelShark.createLightRays(this, isMobile ? 3 : 5, COLOR_FOAM);
+		FlixelShark.createLightRays(this, isMobile ? 3 : 5, COLOR_FOAM);
 		kelpBlades = FlixelShark.createKelpField(this, isMobile ? 4 : 7, COLOR_KELP);
 		bubbles = FlixelShark.createBubbleField(this, isMobile ? 6 : 10, COLOR_ACCENT);
 
-		titleText = FlixelShark.makeLocalizedShadowText(0, isMobile ? 26 : 18, FlxG.width, "games.title", isMobile ? 34 : 28, COLOR_FOAM, COLOR_ACCENT,
-			CENTER);
-		add(titleText);
+		view = new GameSelectView();
+		add(view);
 
-		subtitleText = FlixelShark.makeLocalizedText(0, titleText.y + titleText.height + 2, FlxG.width, "games.subtitle", isMobile ? 14 : 12, COLOR_ACCENT,
-			CENTER);
-		add(subtitleText);
+		view.titleLabel.text = Language.get("games.title");
+		view.subtitleLabel.text = Language.get("games.subtitle");
+		view.backButton.text = Language.get("menu.backButton");
+		view.backButton.onClick = _ -> goBack();
 
-		createGameList();
-
-		backButton = FlixelShark.makeLocalizedButton(20, FlxG.height - (isMobile ? 70 : 50), "menu.backButton", onBackPressed, isMobile ? 120 : 90,
-			isMobile ? 50 : 32, COLOR_MID, COLOR_FOAM);
-		backButton.alpha = 0;
-		add(backButton);
-
-		FlxTween.tween(backButton, {alpha: 1}, 0.4, {startDelay: 0.2 + games.length * 0.1});
+		for (i in 0...GAMES.length)
+			view.gameList.addComponent(createCard(GAMES[i], i * 0.1));
 	}
 
-	function createGameList():Void
+	function createCard(entry:GameEntry, delay:Float):GameCard
 	{
-		buttonGroup = new FlxTypedGroup<FlxButton>();
-		add(buttonGroup);
+		var card:GameCard = new GameCard();
+		var description:String = Language.get(entry.descriptionKey);
+		var bestScore:Int = Std.int(HighScores.get(entry.id));
 
-		var startY:Float = isMobile ? 130 : 100;
-		var spacing:Float = isMobile ? 130 : 92;
-		var cardWidth:Float = FlxG.width - (isMobile ? 50 : 120);
-		var cardX:Float = (FlxG.width - cardWidth) / 2;
-		var cardHeight:Float = spacing - 14;
+		if (bestScore > 0)
+			description += "\n" + Language.get("games.bestScore", ["score" => Std.string(bestScore)]);
 
-		for (i in 0...games.length)
-		{
-			var entry:GameEntry = games[i];
-			var cardY:Float = startY + i * spacing;
+		card.iconBadge.text = entry.icon;
+		card.iconBadge.backgroundColor = (entry.accentColor.rgb : Int);
+		card.nameLabel.text = Language.get(entry.titleKey);
+		card.descriptionLabel.text = description;
+		card.playButton.text = Language.get("games.playButton");
+		card.playButton.backgroundColor = (entry.accentColor.rgb : Int);
+		card.playButton.onClick = _ -> FlixelShark.safeSwitchState(entry.createState);
 
-			var card:FlxSprite = FlixelShark.createRoundedCard(this, cardX, cardY, cardWidth, cardHeight, COLOR_MID, entry.accentColor, 10, COLOR_ABYSS);
+		card.opacity = 0;
+		FlxTween.tween(card, {opacity: 1}, 0.4, {ease: FlxEase.quadOut, startDelay: delay});
 
-			var iconBadge = ProceduralGraphics.makeRoundedRectSprite(cardX + 20, cardY + cardHeight / 2 - 18, 36, 36, entry.accentColor, 8, 0.85);
-			add(iconBadge);
-
-			var iconLabel = FlixelShark.makeText(cardX + 20, cardY + cardHeight / 2 - 18, 36, entry.icon, Resolution4K.scaledInt(10), COLOR_ABYSS, CENTER);
-			add(iconLabel);
-
-			var titleLabel = FlixelShark.makeLocalizedText(cardX + 70, cardY + 12, cardWidth - 90, entry.titleKey, Resolution4K.scaledInt(isMobile ? 22 : 18),
-				COLOR_FOAM, LEFT);
-			add(titleLabel);
-
-			var bestScore:Int = Std.int(HighScores.get(entry.id));
-			var descriptionText:String = Language.get(entry.descriptionKey);
-
-			if (bestScore > 0)
-				descriptionText += "\n" + Language.get("games.bestScore", ["score" => Std.string(bestScore)]);
-
-			var descLabel = FlixelShark.makeText(cardX + 70, cardY + 12 + (isMobile ? 28 : 24), cardWidth - 190, descriptionText,
-				Resolution4K.scaledInt(isMobile ? 13 : 12), COLOR_ACCENT, LEFT);
-			add(descLabel);
-
-			var playButton = FlixelShark.makeDebouncedButton(cardX + cardWidth - (isMobile ? 100 : 80), cardY + cardHeight / 2 - (isMobile ? 22 : 16), "Play",
-				makeSelectHandler(entry), isMobile ? 80 : 64, isMobile ? 44 : 32, entry.accentColor, COLOR_ABYSS);
-			buttonGroup.add(playButton);
-
-			var delay:Float = i * 0.1;
-
-			animateCardElement(card, 0.35, delay);
-			animateCardElement(iconBadge, 0.85, delay);
-			animateCardElement(iconLabel, 1, delay);
-			animateCardElement(titleLabel, 1, delay);
-			animateCardElement(descLabel, 1, delay);
-			animateCardElement(playButton, 1, delay);
-
-			cardSprites.push({sprite: card, baseY: cardY, offset: Std.random(6283) / 1000});
-		}
-	}
-
-	function animateCardElement(sprite:FlxSprite, targetAlpha:Float, delay:Float):Void
-	{
-		var startY:Float = sprite.y;
-		sprite.y += 20;
-		sprite.alpha = 0;
-
-		FlxTween.tween(sprite, {y: startY, alpha: targetAlpha}, 0.4, {
-			ease: FlxEase.quadOut,
-			startDelay: delay
-		});
-	}
-
-	function makeSelectHandler(entry:GameEntry):Void->Void
-	{
-		return function():Void
-		{
-			onGameSelected(entry);
-		};
-	}
-
-	function onGameSelected(entry:GameEntry):Void
-	{
-		if (entry.createState != null)
-			FlixelShark.safeSwitchState(entry.createState);
+		return card;
 	}
 
 	override public function update(elapsed:Float):Void
@@ -205,9 +131,12 @@ class GameState extends FlxState
 
 		FlixelShark.updateBubbleField(bubbles, elapsed);
 		FlixelShark.updateKelpField(kelpBlades, elapsed);
+
+		if (FlxG.keys.justPressed.ESCAPE)
+			goBack();
 	}
 
-	function onBackPressed():Void
+	function goBack():Void
 	{
 		FlixelShark.safeSwitchState(MainMenuState.new);
 	}

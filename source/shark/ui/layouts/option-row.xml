@@ -1,0 +1,8 @@
+<hbox width="100%" styleName="panel" style="spacing: 12px;">
+	<vbox width="100%" style="spacing: 4px;">
+		<label id="nameLabel" styleName="row-title" />
+		<label id="descriptionLabel" styleName="muted" width="100%" />
+	</vbox>
+	<switch id="toggle" verticalAlign="center" />
+	<button id="actionButton" verticalAlign="center" hidden="true" />
+</hbox>

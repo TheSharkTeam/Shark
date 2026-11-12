@@ -5,8 +5,6 @@ on:
     branches:
       - main
       - dev
-    tags:
-      - "v*"
     paths-ignore:
       - "**.md"
       - "LICENSE"
@@ -19,6 +17,15 @@ on:
       - "**.md"
       - "LICENSE"
       - "arts/**"
+
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        default: "auto"
+      version:
+        type: string
+        default: ""
 
   workflow_dispatch:
     inputs:
@@ -35,7 +42,7 @@ on:
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -90,8 +97,10 @@ jobs:
         with:
           environment-input: ${{ inputs.environment || 'auto' }}
 
-      - name: Set version from tag
+      - name: Set version
         uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || '' }}
 
       - name: Setup Haxe toolchain
         uses: ./.github/actions/setup-toolchain
@@ -170,7 +179,7 @@ jobs:
             echo "SHARK_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
             echo "SHARK_KEYSTORE_ALIAS=$KEYSTORE_ALIAS" >> "$GITHUB_ENV"
             echo "SHARK_KEYSTORE_ALIAS_PASSWORD=$KEYSTORE_ALIAS_PASSWORD" >> "$GITHUB_ENV"
-          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+          elif [[ -n "${{ inputs.version }}" ]]; then
             echo "::error::Release requires Android signing secrets"
             exit 1
           else
@@ -230,45 +239,3 @@ jobs:
             *.log
           if-no-files-found: ignore
           retention-days: 7
-
-  release:
-    name: Publish Release
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download builds
-        uses: actions/download-artifact@v4
-        with:
-          pattern: Shark-*
-          path: builds
-
-      - name: Package release files
-        run: |
-          mkdir -p release
-          cd builds
-
-          for dir in */; do
-            name="${dir%/}"
-
-            case "$name" in
-              *-Logs) continue ;;
-              Shark-Android) cp "$(find "$name" -name "*.apk" | head -n1)" ../release/Shark-Android.apk ;;
-              Shark-iOS) cp "$name"/Shark.ipa ../release/Shark-iOS.ipa ;;
-              *) (cd "$name" && zip -qry "../../release/$name.zip" .) ;;
-            esac
-          done
-
-          ls -la ../release
-
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Shark ${{ github.ref_name }}
-          generate_release_notes: true
-          files: release/*
-          fail_on_unmatched_files: true

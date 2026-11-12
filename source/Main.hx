@@ -3,6 +3,7 @@ package;
 import shark.native.MainCpp;
 import flixel.FlxG;
 import flixel.FlxGame;
+import haxe.ui.Toolkit;
 import flixel.text.FlxText;
 import flixel.util.FlxColor;
 import haxe.Http;
@@ -49,7 +50,6 @@ import shark.mobile.utils.TouchUtil;
 import shark.modding.Module;
 import shark.modding.ModuleHandler;
 import shark.api.google.GoogleClient;
-import shark.api.newgrounds.NewClient;
 import shark.world.Country;
 import shark.native.Native;
 
@@ -710,8 +710,6 @@ class Main extends Sprite
 		#end
 	}
 
-	var newgroundsEnabled:Bool = false;
-	var newgroundsAppId:String = "";
 	var googlePlayGamesEnabled:Bool = false;
 	var countryDetectionEnabled:Bool = false;
 
@@ -719,15 +717,6 @@ class Main extends Sprite
 	{
 		if (section == null)
 			return;
-
-		if (section.newgrounds != null)
-		{
-			if (section.newgrounds.enabled != null)
-				newgroundsEnabled = section.newgrounds.enabled;
-
-			if (section.newgrounds.appId != null)
-				newgroundsAppId = section.newgrounds.appId;
-		}
 
 		if (section.googlePlayGames != null && section.googlePlayGames.enabled != null)
 			googlePlayGamesEnabled = section.googlePlayGames.enabled;
@@ -738,18 +727,6 @@ class Main extends Sprite
 
 	function setupPlatforms():Void
 	{
-		if (newgroundsEnabled && StringTools.trim(newgroundsAppId).length > 0)
-		{
-			try
-			{
-				NewClient.initialize(newgroundsAppId);
-			}
-			catch (e:Dynamic)
-			{
-				CrasherLog.logWarning('Newgrounds failed to initialize: ${Std.string(e)}', "platforms");
-			}
-		}
-
 		#if android
 		if (googlePlayGamesEnabled)
 		{
@@ -861,6 +838,9 @@ class Main extends Sprite
 		addChild(game);
 
 		FlxG.autoPause = true;
+
+		Toolkit.init();
+		Toolkit.styleSheet.parse(openfl.utils.Assets.getText("assets/ui/shark.css"), "shark");
 
 		Cursor.initialize();
 		WindowTheme.initialize();

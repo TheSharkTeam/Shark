@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (for example 1.0.0)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark as pre-release"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Validate version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check version format and tag
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::\"$VERSION\" is not a valid version (expected something like 1.0.0)"
+            exit 1
+          fi
+
+          if gh api "repos/${{ github.repository }}/git/ref/tags/v$VERSION" > /dev/null 2>&1; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          fi
+
+  build:
+    name: Build
+    needs: validate
+    uses: ./.github/workflows/build.yml
+    with:
+      environment: production
+      version: ${{ inputs.version }}
+    secrets: inherit
+
+  publish:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download builds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Shark-*
+          path: builds
+
+      - name: Package release files
+        run: |
+          mkdir -p release
+          cd builds
+
+          for dir in */; do
+            name="${dir%/}"
+
+            case "$name" in
+              *-Logs) continue ;;
+              Shark-Android) cp "$(find "$name" -name "*.apk" | head -n1)" ../release/Shark-Android.apk ;;
+              Shark-iOS) cp "$name/Shark.ipa" ../release/Shark-iOS.ipa ;;
+              *) (cd "$name" && zip -qry "../../release/$name.zip" .) ;;
+            esac
+          done
+
+          ls -la ../release
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: Shark v${{ inputs.version }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          files: release/*
+          fail_on_unmatched_files: true

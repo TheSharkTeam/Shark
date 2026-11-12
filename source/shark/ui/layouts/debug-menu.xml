@@ -1,0 +1,9 @@
+<vbox width="100%" height="100%" style="padding: 24px; spacing: 10px;">
+	<label text="EDITOR MODE" styleName="title" horizontalAlign="center" />
+	<label text="Select a tool to open" styleName="subtitle" horizontalAlign="center" />
+	<vbox id="entryList" width="420" horizontalAlign="center" style="spacing: 12px; padding-top: 16px;" />
+	<spacer height="100%" />
+	<label id="messageLabel" styleName="error" horizontalAlign="center" />
+	<label id="statusLabel" styleName="muted" horizontalAlign="center" />
+	<button id="backButton" text="Back" horizontalAlign="center" />
+</vbox>

@@ -1,0 +1,131 @@
+.label {
+	color: #E0FBFC;
+	font-size: 16px;
+}
+
+.title {
+	color: #E0FBFC;
+	font-size: 32px;
+	font-bold: true;
+}
+
+.subtitle, .muted {
+	color: #61A5C2;
+	font-size: 12px;
+}
+
+.row-title {
+	color: #E0FBFC;
+	font-size: 18px;
+}
+
+.button {
+	background-color: #01497C;
+	background-opacity: 0.9;
+	border: 1px solid #61A5C2;
+	border-radius: 8px;
+	color: #E0FBFC;
+	font-size: 15px;
+	padding: 8px 14px;
+}
+
+.button:hover {
+	background-color: #2C7DA0;
+}
+
+.button:down {
+	background-color: #012A4A;
+}
+
+.button:disabled {
+	background-opacity: 0.4;
+	color: #61A5C2;
+}
+
+.primary {
+	background-color: #2C7DA0;
+}
+
+.danger {
+	background-color: #F87171;
+	border-color: #F87171;
+	color: #00111F;
+}
+
+.active {
+	background-color: #4ADE80;
+	border-color: #4ADE80;
+	color: #00111F;
+}
+
+.textfield {
+	background-color: #01497C;
+	border: 2px solid #61A5C2;
+	border-radius: 8px;
+	color: #E0FBFC;
+	font-size: 16px;
+	padding: 8px;
+}
+
+.panel {
+	background-color: #01497C;
+	background-opacity: 0.35;
+	border: 2px solid #61A5C2;
+	border-radius: 14px;
+	padding: 12px;
+}
+
+.scrollview {
+	background-opacity: 0;
+	border: none;
+}
+
+.message {
+	width: 100%;
+	font-size: 16px;
+}
+
+.message-user {
+	color: #E0FBFC;
+}
+
+.message-shark {
+	color: #61A5C2;
+}
+
+.message-error {
+	color: #F87171;
+}
+
+.status-online {
+	color: #4ADE80;
+	font-size: 14px;
+}
+
+.status-offline {
+	color: #F87171;
+	font-size: 14px;
+}
+
+.dev-watermark {
+	color: #F87171;
+	font-size: 11px;
+}
+
+.badge {
+	border-radius: 8px;
+	color: #00111F;
+	font-size: 11px;
+	text-align: center;
+	width: 44px;
+	height: 44px;
+	padding-top: 14px;
+}
+
+.warning {
+	color: #FFD166;
+}
+
+.error {
+	color: #F87171;
+}
