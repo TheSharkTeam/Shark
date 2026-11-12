@@ -69,7 +69,6 @@ Shark/
 ├── setup/application/Setup.hx          One-time project bootstrap
 ├── Project.hxp                         Lime/OpenFL project configuration
 ├── hmm.json                            Haxe dependency lockfile
-├── haxelib_versions.json               Version pins used by Project.hxp
 ├── lime.bat                            Windows helper script
 └── .github/                            CI workflows and composite actions
 ```

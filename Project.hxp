@@ -1,6 +1,5 @@
 import hxp.*;
 import lime.tools.*;
-import haxe.Json;
 import sys.FileSystem;
 import sys.io.File;
 import sys.io.Process;
@@ -86,41 +85,11 @@ class Project extends HXProject
 
 	function setupHaxelibs():Void
 	{
-		var pinned:Map<String, String> = loadPinnedVersions();
-
 		for (name in ["lime", "openfl", "flixel", "hscript", "haxeui-core", "haxeui-flixel"])
-			addHaxelib(name, pinned);
+			haxelibs.push(new Haxelib(name));
 
 		if (target == ANDROID)
-			addHaxelib("extension-androidtools", pinned);
-	}
-
-	function loadPinnedVersions():Map<String, String>
-	{
-		var pinned:Map<String, String> = new Map();
-		var path:String = "haxelib_versions.json";
-
-		if (!FileSystem.exists(path))
-			return pinned;
-
-		try
-		{
-			var parsed:Dynamic = Json.parse(File.getContent(path));
-
-			for (field in Reflect.fields(parsed))
-				pinned.set(field, Reflect.field(parsed, field));
-		}
-		catch (e:Dynamic)
-		{
-			Log.warn('$path could not be parsed - ignoring version pins.');
-		}
-
-		return pinned;
-	}
-
-	function addHaxelib(name:String, pinned:Map<String, String>):Void
-	{
-		haxelibs.push(pinned.exists(name) ? new Haxelib(name, pinned.get(name)) : new Haxelib(name));
+			haxelibs.push(new Haxelib("extension-androidtools"));
 	}
 
 	function setupAssets():Void

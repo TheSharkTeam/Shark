@@ -1,5 +1,5 @@
 name: Setup Shark toolchain
-description: Installs Haxe and the hmm dependencies, restoring them from cache when hmm.json has not changed
+description: Installs Haxe and hmm, then installs every dependency from hmm.json with the haxelib folder cached between runs
 
 inputs:
   haxe-version:
@@ -14,19 +14,21 @@ runs:
         haxe-version: ${{ inputs.haxe-version }}
 
     - name: Restore haxelib cache
-      id: haxelib-cache
       uses: actions/cache@v4
       with:
         path: .haxelib
         key: haxelib-${{ runner.os }}-${{ inputs.haxe-version }}-${{ hashFiles('hmm.json') }}
+        restore-keys: |
+          haxelib-${{ runner.os }}-${{ inputs.haxe-version }}-
 
-    - name: Install dependencies
-      if: steps.haxelib-cache.outputs.cache-hit != 'true'
+    - name: Install hmm
       shell: bash
       run: |
-        haxelib newrepo
-        haxelib install hmm --always --quiet
-        haxelib run hmm install
+        haxelib --global install hmm --always --quiet
+
+    - name: Install dependencies
+      shell: bash
+      run: haxelib --global run hmm install
 
     - name: List installed haxelibs
       shell: bash
