@@ -1,4 +1,4 @@
-package shark;
+package shark.system;
 
 #if sys
 import Sys as HaxeSys;

@@ -9,6 +9,10 @@ import shark.modding.Module;
 import shark.ui.debug.CrasherLog;
 import shark.ui.security.Guard;
 
+#if android
+import extension.androidtools.content.Context;
+#end
+
 #if sys
 import sys.FileSystem;
 import sys.io.File;
@@ -110,123 +114,30 @@ class StorageUtil
 
 		externalPathChecked = true;
 
-		var candidates:Array<String> = [
-			"extension.androidtools.device.Device",
-			"extension.androidtools.Device",
-			"extension.androidtools.device.Storage",
-			"extension.androidtools.Storage"
-		];
-
-		var methodNames:Array<String> = ["getExternalFilesDir", "getExternalStorageDirectory", "getExternalStoragePath"];
-
-		for (className in candidates)
+		try
 		{
-			var cls:Dynamic = Type.resolveClass(className);
-
-			if (cls == null)
-				continue;
-
-			for (methodName in methodNames)
-			{
-				var fn:Dynamic = Reflect.field(cls, methodName);
-
-				if (fn == null || !Reflect.isFunction(fn))
-					continue;
-
-				try
-				{
-					var result:Dynamic = Reflect.callMethod(cls, fn, []);
-
-					if (result != null)
-					{
-						cachedExternalPath = Std.string(result);
-						return cachedExternalPath;
-					}
-				}
-				catch (e:Dynamic) {}
-			}
+			cachedExternalPath = Context.getExternalFilesDir();
+		}
+		catch (e:Dynamic)
+		{
+			cachedExternalPath = null;
 		}
 
-		CrasherLog.logWarning("No external storage binding found in extension-androidtools - falling back to internal storage.", "storage");
-		return null;
+		if (cachedExternalPath == null)
+			CrasherLog.logWarning("External files directory unavailable - falling back to internal storage.", "storage");
+
+		return cachedExternalPath;
 	}
 
 	public static function hasExternalStoragePermission():Bool
 	{
-		var candidates:Array<String> = ["extension.androidtools.permissions.Permissions", "extension.androidtools.Permissions"];
-		var methodNames:Array<String> = ["hasPermission", "checkPermission"];
-
-		for (className in candidates)
-		{
-			var cls:Dynamic = Type.resolveClass(className);
-
-			if (cls == null)
-				continue;
-
-			for (methodName in methodNames)
-			{
-				var fn:Dynamic = Reflect.field(cls, methodName);
-
-				if (fn == null || !Reflect.isFunction(fn))
-					continue;
-
-				try
-				{
-					var result:Dynamic = Reflect.callMethod(cls, fn, ["android.permission.WRITE_EXTERNAL_STORAGE"]);
-
-					if (result != null)
-						return result == true;
-				}
-				catch (e:Dynamic) {}
-			}
-		}
-
 		return true;
-	}
-
-	static function requestExternalStoragePermissionNative(onResult:Bool->Void):Bool
-	{
-		var candidates:Array<String> = ["extension.androidtools.permissions.Permissions", "extension.androidtools.Permissions"];
-		var methodNames:Array<String> = ["requestPermission", "requestPermissions"];
-
-		for (className in candidates)
-		{
-			var cls:Dynamic = Type.resolveClass(className);
-
-			if (cls == null)
-				continue;
-
-			for (methodName in methodNames)
-			{
-				var fn:Dynamic = Reflect.field(cls, methodName);
-
-				if (fn == null || !Reflect.isFunction(fn))
-					continue;
-
-				try
-				{
-					Reflect.callMethod(cls, fn, ["android.permission.WRITE_EXTERNAL_STORAGE", onResult]);
-					return true;
-				}
-				catch (e:Dynamic) {}
-			}
-		}
-
-		return false;
 	}
 	#end
 
 	public static function requestExternalStoragePermission(onResult:Bool->Void):Void
 	{
-		#if android
-		if (requestExternalStoragePermissionNative(onResult))
-			return;
-
-		CrasherLog.logWarning("No permission-request binding found in extension-androidtools - assuming current status.", "storage");
-		onResult(hasExternalStoragePermission());
-		#else
 		onResult(true);
-		#end
 	}
 
 	public static function getContentPath(location:StorageLocation = DATA):String

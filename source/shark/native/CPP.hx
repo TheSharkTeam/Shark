@@ -1,4 +1,4 @@
-package hxcpp;
+package shark.native;
 
 #if cpp
 import cpp.vm.Gc;

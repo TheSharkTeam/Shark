@@ -9,12 +9,11 @@ import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
-import flixel.FlixelShark;
-import git.graphic.GraphicGit;
+import shark.ui.FlixelShark;
+import shark.graphics.ProceduralGraphics;
 import shark.backend.Language;
 import shark.menus.MainMenuState;
 import shark.ui.debug.CrasherLog;
-import Main;
 
 typedef OptionEntry = {
 	label:String,
@@ -161,7 +160,7 @@ class OptionsState extends FlxState
 
 	function createRowBackground(rowY:Float):Void
 	{
-		var row = GraphicGit.makeRoundedRectSprite(rowX(), rowY, Std.int(rowWidth()), Std.int(rowHeight()), COLOR_MID, 10, 0.3);
+		var row = ProceduralGraphics.makeRoundedRectSprite(rowX(), rowY, Std.int(rowWidth()), Std.int(rowHeight()), COLOR_MID, 10, 0.3);
 		add(row);
 	}
 
@@ -188,11 +187,11 @@ class OptionsState extends FlxState
 	{
 		var knobRadius:Float = height / 2 - 3;
 
-		var track:FlxSprite = GraphicGit.makePillSprite(x, y, Std.int(width), Std.int(height), isOn ? COLOR_ON : COLOR_OFF);
+		var track:FlxSprite = ProceduralGraphics.makePillSprite(x, y, Std.int(width), Std.int(height), isOn ? COLOR_ON : COLOR_OFF);
 		add(track);
 
 		var knob:FlxSprite = new FlxSprite();
-		knob.pixels = GraphicGit.createPolygon(knobRadius, 28, FlxColor.WHITE);
+		knob.pixels = ProceduralGraphics.createPolygon(knobRadius, 28, FlxColor.WHITE);
 		knob.y = y + height / 2 - knobRadius;
 		knob.x = isOn ? x + width - knobRadius * 2 - 3 : x + 3;
 		add(knob);
@@ -202,7 +201,7 @@ class OptionsState extends FlxState
 
 	function setToggleState(visual:ToggleVisual, isOn:Bool, x:Float, width:Float, height:Float):Void
 	{
-		visual.track.pixels = GraphicGit.createPill(Std.int(width), Std.int(height), isOn ? COLOR_ON : COLOR_OFF);
+		visual.track.pixels = ProceduralGraphics.createPill(Std.int(width), Std.int(height), isOn ? COLOR_ON : COLOR_OFF);
 
 		var knobRadius:Float = height / 2 - 3;
 		var targetX:Float = isOn ? x + width - knobRadius * 2 - 3 : x + 3;
@@ -255,7 +254,7 @@ class OptionsState extends FlxState
 		Language.setLanguage(list[nextIndex]);
 		shark.modding.ModuleHandler.notifyLanguageChanged(list[nextIndex]);
 
-		FlixelShark.switchState(new OptionsState(), false);
+		FlixelShark.switchState(OptionsState.new, false);
 	}
 
 	function onResetPressed():Void
@@ -265,11 +264,11 @@ class OptionsState extends FlxState
 
 		CrasherLog.addBreadcrumb("Settings reset to defaults", "settings");
 
-		FlixelShark.switchState(new OptionsState(), false);
+		FlixelShark.switchState(OptionsState.new, false);
 	}
 
 	function onBackPressed():Void
 	{
-		FlixelShark.switchState(new MainMenuState(), true, 0.4, COLOR_ABYSS);
+		FlixelShark.switchState(MainMenuState.new, true, 0.4, COLOR_ABYSS);
 	}
 }

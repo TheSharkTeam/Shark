@@ -1,7 +1,7 @@
 package shark.mobile.ui;
 
 import flixel.FlxG;
-import lime.input.LimeInput;
+import shark.system.WindowInput;
 
 #if android
 import openfl.events.Event;
@@ -52,12 +52,12 @@ class AndroidKeyboard
 
 	public static function show():Void
 	{
-		LimeInput.showSoftKeyboard();
+		WindowInput.showSoftKeyboard();
 	}
 
 	public static function hide():Void
 	{
-		LimeInput.hideSoftKeyboard();
+		WindowInput.hideSoftKeyboard();
 	}
 
 	public static function isGamepadConnected():Bool

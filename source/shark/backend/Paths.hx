@@ -12,7 +12,6 @@ import shark.backend.JsonObject;
 import shark.modding.Module;
 import shark.ui.debug.CrasherLog;
 
-import Main;
 
 class Paths
 {

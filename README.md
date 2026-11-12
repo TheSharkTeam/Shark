@@ -18,7 +18,7 @@ The app is organized around a "brain and body" metaphor: `Head` decides how to r
 
 - **Chat interface** with persistent history, request queueing, automatic retry, and a built-in command system (`/image`, `/help`, `/about`, `/status`, `/stats`, `/mute`, `/reset`, `/play`, `/language`)
 - **AI image generation** with in-memory LRU-capped caching, automatic local saving with prompt metadata, and magic-byte payload validation
-- **An animated avatar (`Body`)** reacting to conversation state — idle, thinking, talking, reacting — with an optional path to full Adobe Animate sprite-based animation (`flxanimate`)
+- **An animated avatar (`Body`)** reacting to conversation state — idle, thinking, talking, reacting
 - **Mini-games** (`!play`): Bubble Pop, Reef Runner, Deep Dive — keyboard, mouse, touch (tap/swipe/drag/long-press), and gamepad support
 - **Full localization** (English, Portuguese, Spanish out of the box) with a compiled-in baseline and optional JSON overrides, in-chat language switching, and a language selector in Options
 - **A modding system**: sandboxed `.hxs` (HScript) scripts loaded from a `mods/` folder, with lifecycle hooks, a curated safe API, mod-provided asset overrides, and optional bundled "factory" mods shipped with the app
@@ -29,8 +29,7 @@ The app is organized around a "brain and body" metaphor: `Head` decides how to r
 - **Native C++ utilities**: fast math, secure randomness, thread-safe counters, native boot checkpoints, CPU architecture/compiler detection, precise frame pacing
 - **Persistent, externalized configuration** (`config.json`) covering network, chat, API parameters, image generation, audio, security, connectivity, and Discord presence — kept out of version control
 - **Custom visuals**: an aquatic underwater shader (`water.frag`), procedural rounded rects/gradients/glow/soft-shadow textures, a custom cursor, dark-mode window theming (Windows), and 4K display detection with UI scale calculation
-- **Platform integrations**: optional Discord Rich Presence, Newgrounds medals/scoreboards, Google Play Games achievements/leaderboards (Android), and experimental Nintendo Switch homebrew build support
-- **HaxeUI support** alongside native Flixel UI, with an HScript-to-component binding layer
+- **Platform integrations**: Newgrounds medals/scoreboards, Google Play Games achievements/leaderboards (Android), and experimental Nintendo Switch homebrew build support
 - **Branch-aware builds**: a `dev` branch mode (visible watermark, relaxed checks) and a `main` branch production mode (hard validation: config present, working tree clean, no merge-conflict markers, keystore present, etc.)
 - **Cross-platform builds**: Windows, Android, iOS, Linux, macOS, and HTML5, all with automated, hardened CI
 
@@ -40,73 +39,49 @@ The app is organized around a "brain and body" metaphor: `Head` decides how to r
 Shark/
 ├── source/
 │   ├── Main.hx                         Application entry point & lifecycle
-│   ├── MainCpp.hx                      Native boot checkpoints (embedded C++)
-│   ├── flixel/FlixelShark.hx           UI factories, transitions, particle fields, safety helpers
-│   ├── git/
-│   │   ├── graphic/GraphicGit.hx       Procedural textures (rounded rects, gradients, glow)
-│   │   ├── performance/Boost.hx        Explicit performance boost (FPS target, GameMode on Linux)
-│   │   └── resolution/Resolution4K.hx  4K display detection & UI scale factor
-│   ├── haxe/ui/backend/HScriptManager.hx  Binds HaxeUI components to HScript
-│   ├── hscript/SharkScript.hx          Sandboxed hscript wrapper with rate limiting
-│   ├── hxcpp/CPP.hx                    Native math, GC, memory, secure random, hashing, timers
-│   ├── lime/
-│   │   ├── Build.hx, LimeShark.hx      Build config & unified native-systems facade
-│   │   ├── crossplataform/             Per-platform build modules
-│   │   ├── input/LimeInput.hx          Low-level window/keyboard access
-│   │   ├── manager/                    LimeManager (performance), SutilLime (diagnostics)
-│   │   └── sumil/LimeInternet.hx       Low-level socket reachability check
-│   ├── macros/SharkMacro.hx            Compile-time build info (version, commit, platform)
+│   ├── flixel/system/debug/log/        LogStyle override (works around the Windows ERROR macro)
 │   └── shark/
-│       ├── Assets.hx, FileSys.hx       Mod-aware asset resolution; safe file I/O
+│       ├── Content.hx, FileSys.hx      Content folders; path-traversal-safe file I/O
 │       ├── active/
 │       │   ├── GameState.hx            Mini-game selection screen
-│       │   ├── games/                  BubblePopState, ReefRunnerState, DeepDiveState
+│       │   ├── games/                  BubblePop, ReefRunner, DeepDive, SharkFeedFrenzy
 │       │   └── system/                 Head (brain), Body + BodyState (avatar)
-│       ├── api/                        google/GoogleClient.hx, newgrounds/NewClient.hx
-│       ├── audio/                      Audio.hx, SoundGroup.hx (per-category volume/mute)
-│       ├── backend/
-│       │   ├── Paths.hx                Asset resolution, caching, localization, mod overrides
-│       │   ├── JsonObject.hx           Type-safe JSON wrapper
-│       │   ├── ClientPrefs.hx          Generic + named preference storage
-│       │   ├── Language.hx             i18n: current language, translations, fallback
-│       │   ├── language/               English/Portuguese/Spanish string tables
-│       │   ├── SharkCamera.hx          Camera effects & scene transitions
-│       │   └── input/Controls.hx       Unified keyboard/gamepad/touch/swipe for gameplay
-│       ├── functions/                  ChatEngine.hx, ImageCreator.hx
-│       ├── menus/                      MainMenuState.hx, options/OptionsState.hx
-│       ├── mobile/
-│       │   ├── StorageUtil.hx          Mobile-only image storage with metadata & quotas
-│       │   └── utils/TouchUtil.hx      Multi-touch gestures: tap/double-tap/swipe/drag
-│       ├── modding/                    Module.hx, ModuleHandler.hx (mod event bus)
-│       ├── online/                     Online, Network, Internet, User (anonymous ID)
-│       ├── scripting/HScript.hx        App-bound scripting API (audio, body, stats)
+│       ├── api/                        SharkAPI, google/GoogleClient, newgrounds/NewClient
+│       ├── audio/Audio.hx              Sound and music playback
+│       ├── backend/                    Paths, ClientPrefs, Language (+ language/), Mods, SharkCamera, JsonObject, HighScores
+│       ├── data/                       DataFile, license/ImageLicense
+│       ├── functions/                  ChatEngine, ImageCreator
+│       ├── graphics/                   ProceduralGraphics (rounded rects, gradients, glow)
+│       ├── macros/SharkMacro.hx        Compile-time build info (version, commit, platform)
+│       ├── menus/                      MainMenuState, intro/IntroState, options/OptionsState
+│       ├── mobile/                     StorageUtil, backend/Vibration, ui/AndroidKeyboard, utils/TouchUtil
+│       ├── modding/                    Module, ModuleHandler, api/ModVersion
+│       ├── native/                     CPP (native helpers), MainCpp (boot checkpoints), Native
+│       ├── online/                     Online, Network, MultiPlayer, User, manager/Internet
+│       ├── scripting/SharkScript.hx    Sandboxed hscript wrapper
+│       ├── server/Servers.hx           Backend server list
 │       ├── shaders/WaterShader.hx      Underwater distortion shader wrapper
-│       └── ui/                         Input, Cursor, Guard, window/WindowTheme.hx, debug (DebugDisplay, CrasherLog), discord/Discord.hx
-├── assets/
-│   ├── images/                         icon.png, cursor/
-│   ├── shaders/water.frag              Underwater distortion GLSL shader
-│   └── data/                           config.json (gitignored), lang/
-├── mods/                               Optional bundled "factory" mods + README
-├── arts/banners/image.png              Repository banner
-├── setup/application/Setup.hx          One-time project bootstrap (dev branch only, run outside source/)
-├── project.hxp                         Lime/OpenFL project configuration (Haxe-based, branch-aware)
-├── Build.hxp                           Stricter CI/release build profile
+│       ├── system/                     PerformanceManager, Diagnostics, NativeSystems, WindowInput, Boost, Resolution4K, SharkSys
+│       ├── ui/                         FlixelShark, Cursor, Guard, WindowTheme, Discord, debug/ (CrasherLog, DebugDisplay, menus)
+│       └── world/Country.hx
+├── assets/                             images/, sounds/, shaders/, data/ (config.json is gitignored)
+├── mods/                               Optional bundled mods + README
+├── setup/application/Setup.hx          One-time project bootstrap
+├── Project.hxp                         Lime/OpenFL project configuration
 ├── hmm.json                            Haxe dependency lockfile
-├── lime.bat                            Windows helper script (setup/build/release/publish/status/check)
-├── VERSION, .build_number              Version tracking (build number auto-increments)
-└── .github/workflows/                  CI: Windows, Android, iOS, Linux, macOS, HTML5, Switch (experimental)
+├── haxelib_versions.json               Version pins used by Project.hxp
+├── lime.bat                            Windows helper script
+└── .github/                            CI workflows and composite actions
 ```
 
 ## Requirements
 
 - [Haxe](https://haxe.org/) 4.3.x
 - [hmm](https://github.com/andywhite37/hmm) for dependency management
-- [Lime](https://lime.software/) 8.3.2, [OpenFL](https://www.openfl.org/) 9.5.2, [hxp](https://github.com/openfl/hxp)
-- [HaxeFlixel](https://haxeflixel.com/) 6.2.0, [flixel-addons](https://github.com/HaxeFlixel/flixel-addons) 4.0.1
-- [flixel-ui](https://github.com/HaxeFlixel/flixel-ui) (git, tracks flixel compatibility)
-- [hxcpp](https://github.com/HaxeFoundation/hxcpp) 4.3.2, [hscript](https://github.com/HaxeFoundation/hscript) 2.7.0, [SScript](https://github.com/EFC-team/SScript) 22.3.1
-- Optional native integrations: `hxdiscord_rpc`, `hxvlc`, `hxWindowColorMode` (Windows), `hxgamemode` (Linux), `extension-androidtools` / `extension-googleplaygames` (Android), `newgrounds` (HTML5)
-- `hxmath`, `haxeui-core` + `haxeui-flixel`, `polymod`, `flxanimate`
+- [Lime](https://lime.software/) 8.3.2, [OpenFL](https://www.openfl.org/) 9.5.2, [hxp](https://github.com/openfl/hxp), [hxcpp](https://github.com/HaxeFoundation/hxcpp) 4.3.2
+- [HaxeFlixel](https://github.com/TheSharkTeam/flixel) (TheSharkTeam fork)
+- [hscript](https://github.com/HaxeFoundation/hscript) 2.7.0, [newgrounds](https://github.com/Geokureli/Newgrounds) 2.0.3
+- [extension-androidtools](https://github.com/MAJigsaw77/extension-androidtools) 2.2.2 (Android only)
 
 See `hmm.json` for the full, version-pinned dependency list.
 
@@ -157,11 +132,7 @@ haxelib run lime build html5 -final
 
 All six targets build automatically via GitHub Actions on every push. Android release builds are signed with a keystore (path/password overridable via `SHARK_KEYSTORE_*` env vars). A seventh, **experimental** Nintendo Switch homebrew workflow (`switch.yml`) is manual-only and not guaranteed to succeed.
 
-Two build profiles exist:
-- **`project.hxp`** (default) — everyday development builds.
-- **`Build.hxp`** — a stricter, CI-style profile. Run it with `haxelib run lime build Build.hxp <target> -final`, or `lime.bat release <target>`.
-
-On the **`main`** branch, `project.hxp` runs a production checklist before building (config present, VERSION valid, working tree clean, no leftover merge-conflict markers, Android keystore present, VERSION tagged in git, `CHANGELOG.md` mentions the version) and **blocks the build** if a required item fails. `lime.bat publish <target>` only runs from `main`. On the **`dev`** branch, builds get a visible "Dev Build (Commit: ...)" watermark instead.
+The build environment (`dev`, `staging` or `production`) comes from `SHARK_ENV`, or from the git branch when it is not set (`main` → production, `staging` → staging, anything else → dev). Dev builds get a "(dev)" title suffix and a visible "Dev Build (Commit: ...)" watermark. `lime.bat release <target>` builds a production release, and `lime.bat publish <target>` does the same but only from `main`.
 
 ---
 
@@ -216,7 +187,7 @@ Open **Options** from the main menu (or the icon-button row) to:
 - Toggle the **FPS/memory overlay** permanently (same overlay F3 toggles temporarily in any build)
 - Change the **language** (cycles through installed languages; also settable from chat via `/language`)
 
-More options (per-category volume via `SoundGroup`, a performance mode selector for `Boost`) can be wired in as the Options screen grows — the underlying systems already support them.
+More options (such as a performance mode selector for `Boost`) can be wired in as the Options screen grows — the underlying systems already support them.
 
 ## Mini-games
 

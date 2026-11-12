@@ -1,4 +1,4 @@
-package git.graphic;
+package shark.graphics;
 
 import flixel.FlxSprite;
 import flixel.util.FlxColor;
@@ -24,7 +24,7 @@ enum abstract BubbleTail(Int)
 	var NONE = 2;
 }
 
-class GraphicGit
+class ProceduralGraphics
 {
 	static inline var CACHE_LIMIT:Int = 60;
 

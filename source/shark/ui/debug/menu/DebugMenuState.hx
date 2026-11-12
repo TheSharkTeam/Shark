@@ -8,18 +8,18 @@ import flixel.text.FlxText.FlxTextAlign;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
-import git.graphic.GraphicGit;
+import shark.graphics.ProceduralGraphics;
 import shark.menus.MainMenuState;
 import shark.mobile.backend.Vibration.HapticStyle;
 import shark.mobile.backend.Vibration;
 import shark.modding.api.ModVersion;
 import shark.ui.debug.CrasherLog;
-import Main;
+import shark.ui.debug.chat.ChatEditorState;
 
 typedef DebugMenuEntry = {
 	label:String,
 	description:String,
-	stateClassName:String,
+	createState:Void->FlxState,
 	enabled:Bool
 }
 
@@ -55,7 +55,7 @@ class DebugMenuState extends FlxState
 			{
 				label: "Chat Editor",
 				description: "Edit chat prompts, history, and live API settings.",
-				stateClassName: "shark.ui.debug.chat.ChatEditorState",
+				createState: ChatEditorState.new,
 				enabled: true
 			}
 		];
@@ -75,7 +75,7 @@ class DebugMenuState extends FlxState
 
 	function buildBackground():Void
 	{
-		var background:FlxSprite = GraphicGit.makeGradientSprite(0, 0, Std.int(FlxG.width), Std.int(FlxG.height), FlxColor.fromRGB(10, 18, 28),
+		var background:FlxSprite = ProceduralGraphics.makeGradientSprite(0, 0, Std.int(FlxG.width), Std.int(FlxG.height), FlxColor.fromRGB(10, 18, 28),
 			FlxColor.fromRGB(4, 8, 14));
 		background.scrollFactor.set(0, 0);
 		add(background);
@@ -102,7 +102,7 @@ class DebugMenuState extends FlxState
 			var entry:DebugMenuEntry = entries[i];
 			var rowY:Float = TOP_MARGIN + i * (ROW_HEIGHT + ROW_SPACING);
 
-			var background:FlxSprite = GraphicGit.makeFilledRoundedRectWithBorderSprite(startX, rowY, Std.int(ROW_WIDTH), Std.int(ROW_HEIGHT),
+			var background:FlxSprite = ProceduralGraphics.makeFilledRoundedRectWithBorderSprite(startX, rowY, Std.int(ROW_WIDTH), Std.int(ROW_HEIGHT),
 				rowFillColor(i), rowBorderColor(i), 10, 2);
 			background.alpha = entry.enabled ? 1 : 0.5;
 			add(background);
@@ -155,7 +155,7 @@ class DebugMenuState extends FlxState
 		{
 			var entry:DebugMenuEntry = entries[i];
 
-			rowBackgrounds[i].pixels = GraphicGit.createFilledRoundedRectWithBorder(Std.int(ROW_WIDTH), Std.int(ROW_HEIGHT), rowFillColor(i),
+			rowBackgrounds[i].pixels = ProceduralGraphics.createFilledRoundedRectWithBorder(Std.int(ROW_WIDTH), Std.int(ROW_HEIGHT), rowFillColor(i),
 				rowBorderColor(i), 10, 2);
 			rowBackgrounds[i].alpha = entry.enabled ? 1 : 0.5;
 		}
@@ -226,29 +226,11 @@ class DebugMenuState extends FlxState
 
 	function openEntry(entry:DebugMenuEntry):Void
 	{
-		var stateClass:Dynamic = Type.resolveClass(entry.stateClassName);
-
-		if (stateClass == null)
-		{
-			CrasherLog.logWarning('Debug menu entry "${entry.label}" points to missing class ${entry.stateClassName}', "editor");
-			showUnavailable('${entry.label} is not available yet.');
-			Vibration.trigger(HapticStyle.WARNING);
-			return;
-		}
-
 		try
 		{
-			var instance:Dynamic = Type.createInstance(stateClass, []);
-
-			if (!Std.isOfType(instance, FlxState))
-			{
-				showUnavailable('${entry.label} could not be opened.');
-				return;
-			}
-
 			CrasherLog.addBreadcrumb('Opened editor: ${entry.label}', "navigation");
 			Vibration.trigger(HapticStyle.MEDIUM);
-			FlxG.switchState(cast instance);
+			FlxG.switchState(entry.createState);
 		}
 		catch (e:Dynamic)
 		{
@@ -273,7 +255,7 @@ class DebugMenuState extends FlxState
 	{
 		Vibration.menuSelect();
 		CrasherLog.addBreadcrumb("Left debug menu", "navigation");
-		FlxG.switchState(new MainMenuState());
+		FlxG.switchState(MainMenuState.new);
 	}
 
 	override function destroy():Void
@@ -286,6 +268,6 @@ class DebugMenuState extends FlxState
 
 	public static function open():Void
 	{
-		FlxG.switchState(new DebugMenuState());
+		FlxG.switchState(DebugMenuState.new);
 	}
 }

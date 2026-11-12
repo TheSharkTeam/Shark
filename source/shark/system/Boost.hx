@@ -1,7 +1,7 @@
-package git.performance;
+package shark.system;
 
 import flixel.FlxG;
-import lime.manager.LimeManager;
+import shark.system.PerformanceManager;
 
 class Boost
 {
@@ -54,8 +54,8 @@ class Boost
 		originalDrawFramerate = FlxG.drawFramerate;
 		originalUpdateFramerate = FlxG.updateFramerate;
 
-		LimeManager.maxFramerate = maxSupportedFPS;
-		LimeManager.setPerformanceMode("high");
+		PerformanceManager.maxFramerate = maxSupportedFPS;
+		PerformanceManager.setPerformanceMode("high");
 		setTargetFPS(maxSupportedFPS);
 
 		requestGameMode(true);
@@ -68,8 +68,8 @@ class Boost
 
 		isBoostActive = false;
 
-		LimeManager.maxFramerate = originalDrawFramerate;
-		LimeManager.setPerformanceMode("auto");
+		PerformanceManager.maxFramerate = originalDrawFramerate;
+		PerformanceManager.setPerformanceMode("auto");
 
 		FlxG.drawFramerate = originalDrawFramerate;
 		FlxG.updateFramerate = originalUpdateFramerate;
@@ -97,12 +97,12 @@ class Boost
 
 	public static function getCurrentFPS():Float
 	{
-		return 1000 / Math.max(LimeManager.averageFrameTimeMs, 1);
+		return 1000 / Math.max(PerformanceManager.averageFrameTimeMs, 1);
 	}
 
 	public static function getFrameTimeMs():Float
 	{
-		return LimeManager.averageFrameTimeMs;
+		return PerformanceManager.averageFrameTimeMs;
 	}
 
 	public static function isRunningSmooth():Bool

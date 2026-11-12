@@ -13,14 +13,13 @@ import openfl.media.Sound;
 import openfl.media.SoundChannel;
 import openfl.media.SoundTransform;
 import openfl.utils.Assets;
-import flixel.FlixelShark;
+import shark.ui.FlixelShark;
 import shark.active.system.Body;
 import shark.backend.Language;
 import shark.menus.MainMenuState;
 import shark.mobile.backend.Vibration;
 import shark.modding.ModuleHandler;
 import shark.ui.debug.CrasherLog;
-import Main;
 
 class IntroState extends FlxState
 {
@@ -208,7 +207,7 @@ class IntroState extends FlxState
 		stopMusic();
 		ModuleHandler.notifyIntroComplete();
 
-		FlixelShark.switchState(new MainMenuState(), true, 0.5, COLOR_ABYSS);
+		FlixelShark.switchState(MainMenuState.new, true, 0.5, COLOR_ABYSS);
 	}
 
 	function stopMusic():Void

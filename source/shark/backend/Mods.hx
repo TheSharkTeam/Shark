@@ -14,8 +14,7 @@ import shark.modding.Module;
 import shark.modding.api.ModVersion;
 import shark.online.Online;
 import shark.ui.debug.CrasherLog;
-import lime.manager.LimeManager;
-import Main;
+import shark.system.PerformanceManager;
 
 typedef ModuleSummary = {
 	name:String,
@@ -96,7 +95,7 @@ class Mods
 	static function bindDefaultApi(mod:Module):Void
 	{
 		mod.bind("modName", mod.name);
-		mod.bind("buildVersion", LimeManager.buildVersion);
+		mod.bind("buildVersion", PerformanceManager.buildVersion);
 		mod.bind("apiVersion", ModVersion.CURRENT);
 		mod.bind("isSafeMode", function():Bool return Main.isSafeMode);
 

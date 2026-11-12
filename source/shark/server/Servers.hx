@@ -9,7 +9,6 @@ import shark.online.Online;
 import shark.ui.debug.CrasherLog;
 import shark.ui.security.Guard;
 
-import Main;
 
 typedef ServerProfile = {
 	id:String,

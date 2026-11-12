@@ -1,5 +1,6 @@
 package;
 
+import shark.native.MainCpp;
 import flixel.FlxG;
 import flixel.FlxGame;
 import flixel.text.FlxText;
@@ -7,8 +8,8 @@ import flixel.util.FlxColor;
 import haxe.Http;
 import haxe.Json;
 import haxe.Timer;
-import lime.LimeShark;
-import lime.manager.LimeManager;
+import shark.system.NativeSystems;
+import shark.system.PerformanceManager;
 import lime.ui.KeyCode;
 import openfl.display.FPS;
 import openfl.display.Sprite;
@@ -42,7 +43,7 @@ import shark.ui.input.Cursor;
 import shark.ui.window.WindowTheme;
 import shark.ui.security.Guard;
 import shark.server.Servers;
-import git.resolution.Resolution4K;
+import shark.system.Resolution4K;
 import shark.backend.Mods;
 import shark.mobile.utils.TouchUtil;
 import shark.modding.Module;
@@ -50,7 +51,7 @@ import shark.modding.ModuleHandler;
 import shark.api.google.GoogleClient;
 import shark.api.newgrounds.NewClient;
 import shark.world.Country;
-import shark.Native;
+import shark.native.Native;
 
 typedef SettingsData = {
 	hasCompletedFirstRun:Bool,
@@ -148,7 +149,7 @@ class Main extends Sprite
 		recordBootPhase("network_config_ready");
 
 		MainCpp.recordCheckpoint("pre_lime_shark");
-		LimeShark.initialize();
+		NativeSystems.initialize();
 		MainCpp.recordCheckpoint("lime_shark_ready");
 
 		ImageCreator.initialize();
@@ -672,7 +673,7 @@ class Main extends Sprite
 			return;
 
 		if (section.buildVersion != null)
-			LimeManager.buildVersion = section.buildVersion;
+			PerformanceManager.buildVersion = section.buildVersion;
 	}
 
 	var discordEnabled:Bool = false;
@@ -1184,7 +1185,7 @@ class Main extends Sprite
 
 		Vibration.menuSelect();
 		CrasherLog.addBreadcrumb("Back button pressed", "input");
-		FlxG.switchState(new MainMenuState());
+		FlxG.switchState(MainMenuState.new);
 	}
 
 	function onUncaughtError(e:UncaughtErrorEvent):Void
@@ -1211,7 +1212,7 @@ class Main extends Sprite
 		isSafeMode = true;
 
 		Online.stop();
-		LimeManager.disableRuntimeOptimization();
+		PerformanceManager.disableRuntimeOptimization();
 		Audio.stopMusic(0);
 		Vibration.cancel();
 		Vibration.setEnabled(false);
@@ -1220,7 +1221,7 @@ class Main extends Sprite
 		CrasherLog.logSecurity("Entered safe mode after repeated crashes");
 
 		if (FlxG.state != null && !Std.isOfType(FlxG.state, MainMenuState))
-			FlxG.switchState(new MainMenuState());
+			FlxG.switchState(MainMenuState.new);
 	}
 
 	function logSecurityEvent(message:String):Void

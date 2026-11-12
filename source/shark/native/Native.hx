@@ -1,12 +1,12 @@
-package shark;
+package shark.native;
 
-import lime.LimeShark;
-import shark.SharkSys;
+import shark.system.NativeSystems;
+import shark.system.SharkSys;
 
-import MainCpp;
+import shark.native.MainCpp;
 
 #if cpp
-import hxcpp.CPP;
+import shark.native.CPP;
 #end
 
 class Native
@@ -41,7 +41,7 @@ class Native
 
 	static function get_platform():String
 	{
-		return LimeShark.platform;
+		return NativeSystems.platform;
 	}
 
 	public static var isDevMode(get, never):Bool;
@@ -72,7 +72,7 @@ class Native
 
 	public static function getMemoryUsageMB():Float
 	{
-		return LimeShark.getMemoryUsageMB();
+		return NativeSystems.getMemoryUsageMB();
 	}
 
 	public static function collectGarbage(major:Bool = false):Void
@@ -84,7 +84,7 @@ class Native
 
 	public static function getCpuCoreCount():Int
 	{
-		return LimeShark.getCpuCoreCount();
+		return NativeSystems.getCpuCoreCount();
 	}
 
 	public static function startTimer(name:String):Void

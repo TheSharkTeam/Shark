@@ -1,15 +1,15 @@
-package lime;
+package shark.system;
 
-import lime.input.LimeInput;
-import lime.manager.LimeManager;
-import lime.manager.SutilLime;
+import shark.system.WindowInput;
+import shark.system.PerformanceManager;
+import shark.system.Diagnostics;
 import shark.ui.security.Guard;
 
 #if cpp
-import hxcpp.CPP;
+import shark.native.CPP;
 #end
 
-class LimeShark
+class NativeSystems
 {
 	public static var isInitialized(default, null):Bool = false;
 
@@ -20,75 +20,75 @@ class LimeShark
 
 		isInitialized = true;
 
-		LimeManager.initialize();
-		LimeInput.initialize();
+		PerformanceManager.initialize();
+		WindowInput.initialize();
 	}
 
 	public static var platform(get, never):String;
 
 	static function get_platform():String
 	{
-		return LimeManager.getPlatformName();
+		return PerformanceManager.getPlatformName();
 	}
 
 	public static var isMobile(get, never):Bool;
 
 	static function get_isMobile():Bool
 	{
-		return LimeManager.isMobileTarget;
+		return PerformanceManager.isMobileTarget;
 	}
 
 	public static var isDesktop(get, never):Bool;
 
 	static function get_isDesktop():Bool
 	{
-		return LimeManager.isDesktopTarget;
+		return PerformanceManager.isDesktopTarget;
 	}
 
 	public static var isWeb(get, never):Bool;
 
 	static function get_isWeb():Bool
 	{
-		return LimeManager.isWebTarget;
+		return PerformanceManager.isWebTarget;
 	}
 
 	public static var isDebugBuild(get, never):Bool;
 
 	static function get_isDebugBuild():Bool
 	{
-		return LimeManager.isDebugBuild;
+		return PerformanceManager.isDebugBuild;
 	}
 
 	public static var isLowEndDevice(get, never):Bool;
 
 	static function get_isLowEndDevice():Bool
 	{
-		return SutilLime.isLowEndDevice;
+		return Diagnostics.isLowEndDevice;
 	}
 
 	public static function showKeyboard():Void
 	{
-		LimeInput.showSoftKeyboard();
+		WindowInput.showSoftKeyboard();
 	}
 
 	public static function hideKeyboard():Void
 	{
-		LimeInput.hideSoftKeyboard();
+		WindowInput.hideSoftKeyboard();
 	}
 
 	public static function getPerformanceSummary():String
 	{
-		return LimeManager.getPerformanceSummary();
+		return PerformanceManager.getPerformanceSummary();
 	}
 
 	public static function getDiagnostics():String
 	{
-		return SutilLime.getDiagnosticsReport();
+		return Diagnostics.getDiagnosticsReport();
 	}
 
 	public static function getBuildSummary():String
 	{
-		return LimeManager.getBuildSummary();
+		return PerformanceManager.getBuildSummary();
 	}
 
 	public static function getMemoryUsageMB():Float

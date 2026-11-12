@@ -1,4 +1,4 @@
-package git.resolution;
+package shark.system;
 
 import flixel.FlxG;
 import openfl.system.Capabilities;

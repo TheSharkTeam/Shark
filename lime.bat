@@ -33,10 +33,11 @@ if /I "%~1"=="build" (
 if /I "%~1"=="release" (
 	if "%~2"=="" (
 		echo Usage: lime.bat release [windows^|android^|html5^|linux^|mac]
-		echo   Builds using Build.hxp instead of project.hxp - a stricter, CI-style profile.
+		echo   Builds a production release.
 		exit /b 1
 	)
-	haxelib run lime build Build.hxp %~2 -final
+	set SHARK_ENV=production
+	haxelib run lime build %~2 -final
 	exit /b %errorlevel%
 )
 
@@ -52,7 +53,8 @@ if /I "%~1"=="publish" (
 		exit /b 1
 	)
 	echo Publishing from main branch...
-	haxelib run lime build Build.hxp %~2 -final
+	set SHARK_ENV=production
+	haxelib run lime build %~2 -final
 	exit /b %errorlevel%
 )
 
@@ -185,16 +187,6 @@ if /I "%~1"=="mods" (
 	exit /b 0
 )
 
-if /I "%~1"=="astc" (
-	if not exist assets\images (
-		echo No assets\images folder found.
-		exit /b 1
-	)
-	echo Compressing assets\images to assets\images\astc ...
-	haxelib run astc-compressor compress -i assets\images -blocksize 6x6 -quality medium -colorprofile cl -o assets\images\astc
-	exit /b %errorlevel%
-)
-
 if /I "%~1"=="watch" (
 	if "%~2"=="" (
 		echo Usage: lime.bat watch [windows^|android^|html5^|linux^|mac]
@@ -217,7 +209,7 @@ if /I "%~1"=="watch" (
 	echo Watching for changes...
 
 	:watchloop
-	for /f %%s in ('powershell -NoProfile -Command "try { (Get-ChildItem -Path source,assets,project.hxp -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property LastWriteTime -Maximum).Maximum.Ticks } catch { 0 }"') do set CURRENT_STAMP=%%s
+	for /f %%s in ('powershell -NoProfile -Command "try { (Get-ChildItem -Path source,assets,Project.hxp -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property LastWriteTime -Maximum).Maximum.Ticks } catch { 0 }"') do set CURRENT_STAMP=%%s
 
 	if not "!CURRENT_STAMP!"=="!LAST_STAMP!" (
 		if defined LAST_STAMP (
@@ -259,15 +251,14 @@ echo   lime.bat setup               Install hmm, dependencies, set up Lime, run 
 echo   lime.bat dev                 Switch to the dev branch and run project bootstrap
 echo   lime.bat status              Show branch, version, build number, config status
 echo   lime.bat check               Run pre-flight validation without building
-echo   lime.bat build ^<target^>      Build for a target using project.hxp
+echo   lime.bat build ^<target^>      Build for a target using Project.hxp
 echo   lime.bat watch ^<target^>      Build, then auto-rebuild whenever source/assets change
-echo   lime.bat release ^<target^>    Build using Build.hxp ^(stricter CI-style profile^)
+echo   lime.bat release ^<target^>    Build a production release
 echo   lime.bat publish ^<target^>    Same as release, but only allowed on the main branch
 echo   lime.bat test ^<target^>       Build and run for a target
 echo   lime.bat clean [target]      Remove the export folder ^(all, or just one target^)
 echo   lime.bat doctor              Print Haxe version and installed haxelibs
 echo   lime.bat mods                Open the mods folder
-echo   lime.bat astc                Compress assets\images to ASTC textures (assets\images\astc)
 echo   lime.bat version [x.y.z]     Show or set the VERSION file
 echo.
 exit /b 0

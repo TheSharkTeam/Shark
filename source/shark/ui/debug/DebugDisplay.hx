@@ -4,10 +4,10 @@ import flixel.group.FlxSpriteGroup;
 import flixel.FlxSprite;
 import flixel.text.FlxText;
 import flixel.util.FlxColor;
-import lime.manager.LimeManager;
+import shark.system.PerformanceManager;
 
 #if cpp
-import hxcpp.CPP;
+import shark.native.CPP;
 #end
 
 class DebugDisplay extends FlxSpriteGroup
@@ -74,10 +74,10 @@ class DebugDisplay extends FlxSpriteGroup
 
 	function getFps():Int
 	{
-		if (LimeManager.averageFrameTimeMs <= 0)
+		if (PerformanceManager.averageFrameTimeMs <= 0)
 			return 0;
 
-		return Std.int(1000 / LimeManager.averageFrameTimeMs);
+		return Std.int(1000 / PerformanceManager.averageFrameTimeMs);
 	}
 
 	function getMemoryLabel():String

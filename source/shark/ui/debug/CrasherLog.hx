@@ -3,7 +3,7 @@ package shark.ui.debug;
 import haxe.Json;
 import haxe.Timer;
 import haxe.CallStack;
-import lime.manager.LimeManager;
+import shark.system.PerformanceManager;
 import shark.FileSys;
 
 #if sys
@@ -231,8 +231,8 @@ class CrasherLog
 			timestamp: now,
 			message: sanitized,
 			severity: severity,
-			platform: LimeManager.getPlatformName(),
-			buildSummary: LimeManager.getBuildSummary(),
+			platform: PerformanceManager.getPlatformName(),
+			buildSummary: PerformanceManager.getBuildSummary(),
 			count: 1,
 			category: category,
 			sessionId: sessionId,

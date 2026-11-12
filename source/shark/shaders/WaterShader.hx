@@ -2,7 +2,7 @@ package shark.shaders;
 
 import flixel.FlxG;
 import flixel.system.FlxAssets.FlxShader;
-import lime.manager.LimeManager;
+import shark.system.PerformanceManager;
 
 interface IUpdatableShader
 {
@@ -134,7 +134,7 @@ class WaterShader extends FlxShader implements IUpdatableShader
 		if (qualityCheckTimer >= QUALITY_CHECK_INTERVAL)
 		{
 			qualityCheckTimer = 0;
-			amplitude = baseAmplitude * LimeManager.getQualityMultiplier();
+			amplitude = baseAmplitude * PerformanceManager.getQualityMultiplier();
 		}
 	}
 
@@ -145,13 +145,13 @@ class WaterShader extends FlxShader implements IUpdatableShader
 
 	public static function getRecommendedTier():WaterShaderTier
 	{
-		if (LimeManager.isLowMemoryMode)
+		if (PerformanceManager.isLowMemoryMode)
 			return DISABLED;
 
-		if (FlxG.onMobile && LimeManager.currentQualityTier == 0)
+		if (FlxG.onMobile && PerformanceManager.currentQualityTier == 0)
 			return DISABLED;
 
-		if (FlxG.onMobile && LimeManager.currentQualityTier == 1)
+		if (FlxG.onMobile && PerformanceManager.currentQualityTier == 1)
 			return LITE;
 
 		return FULL;

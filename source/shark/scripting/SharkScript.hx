@@ -1,4 +1,4 @@
-package hscript;
+package shark.scripting;
 
 import hscript.Parser;
 import hscript.Interp;

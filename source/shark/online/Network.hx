@@ -6,7 +6,7 @@ import haxe.Timer;
 import shark.online.manager.Internet;
 import shark.online.NetworkResponse;
 import shark.ui.debug.CrasherLog;
-import lime.manager.LimeManager;
+import shark.system.PerformanceManager;
 
 class Network
 {
@@ -82,7 +82,7 @@ class Network
 		var result:Map<String, String> = headers != null ? headers : new Map();
 
 		if (!result.exists("User-Agent"))
-			result.set("User-Agent", 'Shark/${LimeManager.buildVersion} (${LimeManager.getPlatformName()})');
+			result.set("User-Agent", 'Shark/${PerformanceManager.buildVersion} (${PerformanceManager.getPlatformName()})');
 
 		return result;
 	}

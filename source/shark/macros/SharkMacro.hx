@@ -1,4 +1,4 @@
-package macros;
+package shark.macros;
 
 #if macro
 import haxe.macro.Context;

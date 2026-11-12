@@ -207,6 +207,6 @@ class ReefRunnerState extends FlxState
 
 	function onBackPressed():Void
 	{
-		FlxG.switchState(new shark.active.GameState());
+		FlxG.switchState(shark.active.GameState.new);
 	}
 }

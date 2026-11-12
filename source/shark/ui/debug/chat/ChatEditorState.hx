@@ -11,7 +11,7 @@ import flixel.util.FlxColor;
 import openfl.text.TextField;
 import openfl.text.TextFieldType;
 import openfl.text.TextFormat;
-import git.graphic.GraphicGit;
+import shark.graphics.ProceduralGraphics;
 import shark.functions.ChatEngine;
 import shark.mobile.backend.Vibration.HapticStyle;
 import shark.mobile.backend.Vibration;
@@ -142,7 +142,7 @@ class ChatEditorState extends FlxState
 
 	function buildBackground():Void
 	{
-		var background:FlxSprite = GraphicGit.makeGradientSprite(0, 0, Std.int(FlxG.width), Std.int(FlxG.height), FlxColor.fromRGB(10, 18, 28),
+		var background:FlxSprite = ProceduralGraphics.makeGradientSprite(0, 0, Std.int(FlxG.width), Std.int(FlxG.height), FlxColor.fromRGB(10, 18, 28),
 			FlxColor.fromRGB(4, 8, 14));
 		background.scrollFactor.set(0, 0);
 		add(background);
@@ -216,7 +216,7 @@ class ChatEditorState extends FlxState
 		{
 			var rowY:Float = fieldsStartY + i * (ROW_HEIGHT + ROW_SPACING);
 
-			var background:FlxSprite = GraphicGit.makeRoundedRectSprite(panelX, rowY, Std.int(PANEL_WIDTH), Std.int(ROW_HEIGHT), rowFillColor(i), 6);
+			var background:FlxSprite = ProceduralGraphics.makeRoundedRectSprite(panelX, rowY, Std.int(PANEL_WIDTH), Std.int(ROW_HEIGHT), rowFillColor(i), 6);
 			add(background);
 			rowBackgrounds.push(background);
 
@@ -272,7 +272,7 @@ class ChatEditorState extends FlxState
 		for (i in 0...fields.length)
 		{
 			rowValues[i].text = fields[i].getValue();
-			rowBackgrounds[i].pixels = GraphicGit.createRoundedRect(Std.int(PANEL_WIDTH), Std.int(ROW_HEIGHT), rowFillColor(i), 6);
+			rowBackgrounds[i].pixels = ProceduralGraphics.createRoundedRect(Std.int(PANEL_WIDTH), Std.int(ROW_HEIGHT), rowFillColor(i), 6);
 		}
 	}
 
@@ -376,7 +376,7 @@ class ChatEditorState extends FlxState
 	{
 		Vibration.menuSelect();
 		CrasherLog.addBreadcrumb("Left chat editor", "navigation");
-		FlxG.switchState(new DebugMenuState());
+		FlxG.switchState(DebugMenuState.new);
 	}
 
 	static function clampFloat(value:Float, min:Float, max:Float):Float

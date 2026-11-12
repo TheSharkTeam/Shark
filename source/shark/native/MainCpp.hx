@@ -1,6 +1,6 @@
-package;
+package shark.native;
 
-import macros.SharkMacro;
+import shark.macros.SharkMacro;
 
 @:headerCode('
 #include <chrono>

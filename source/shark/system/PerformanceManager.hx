@@ -1,4 +1,4 @@
-package lime.manager;
+package shark.system;
 
 import flixel.FlxG;
 import haxe.Timer;
@@ -7,10 +7,9 @@ import shark.online.Online;
 import shark.mobile.StorageUtil;
 import shark.ui.debug.CrasherLog;
 
-import Main;
 
 #if cpp
-import hxcpp.CPP;
+import shark.native.CPP;
 #end
 
 typedef QualityChangeEntry = {
@@ -19,7 +18,7 @@ typedef QualityChangeEntry = {
 	reason:String
 }
 
-class LimeManager
+class PerformanceManager
 {
 	public static var platform(default, null):String;
 	public static var isMobileTarget(default, null):Bool = false;
@@ -132,9 +131,9 @@ class LimeManager
 
 	static function refineQualityWithDeviceCapability():Void
 	{
-		SutilLime.estimateDeviceCapability();
+		Diagnostics.estimateDeviceCapability();
 
-		var suggestedTier:Int = SutilLime.suggestInitialQualityTier();
+		var suggestedTier:Int = Diagnostics.suggestInitialQualityTier();
 
 		if (suggestedTier < currentQualityTier)
 			currentQualityTier = suggestedTier;
@@ -224,7 +223,7 @@ class LimeManager
 		var frameMs:Float = FlxG.elapsed * 1000;
 
 		frameTimeSamples.push(frameMs);
-		SutilLime.pushFrameSample(frameMs);
+		Diagnostics.pushFrameSample(frameMs);
 
 		if (frameTimeSamples.length > 60)
 			frameTimeSamples.shift();

@@ -1,12 +1,13 @@
-package lime.manager;
+package shark.system;
 
+import shark.native.MainCpp;
 import shark.online.Online;
 
 #if cpp
-import hxcpp.CPP;
+import shark.native.CPP;
 #end
 
-class SutilLime
+class Diagnostics
 {
 	public static var devicePerformanceScore(default, null):Float = 0.5;
 	public static var isLowEndDevice(default, null):Bool = false;
@@ -49,10 +50,10 @@ class SutilLime
 
 	static function estimatePlatformScore():Float
 	{
-		if (LimeManager.isMobileTarget)
+		if (PerformanceManager.isMobileTarget)
 			return 0.4;
 
-		if (LimeManager.isWebTarget)
+		if (PerformanceManager.isWebTarget)
 			return 0.5;
 
 		return 1;
@@ -130,8 +131,8 @@ class SutilLime
 	{
 		var lines:Array<String> = [];
 
-		lines.push('Platform: ${LimeManager.getPlatformName()}');
-		lines.push('Build: ${LimeManager.getBuildSummary()}');
+		lines.push('Platform: ${PerformanceManager.getPlatformName()}');
+		lines.push('Build: ${PerformanceManager.getBuildSummary()}');
 		lines.push('Native: ${MainCpp.getNativeBuildInfo()}');
 		lines.push('Device score: ${Math.round(devicePerformanceScore * 100)}%${isLowEndDevice ? " (low-end)" : ""}');
 		lines.push('Median frame time: ${Math.round(getMedianFrameTime() * 100) / 100}ms');

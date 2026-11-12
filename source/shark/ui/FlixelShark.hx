@@ -1,6 +1,7 @@
-package flixel;
+package shark.ui;
 
 import flixel.FlxG;
+import flixel.util.typeLimit.NextState;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.group.FlxSpriteGroup;
@@ -12,14 +13,14 @@ import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import haxe.ds.WeakMap;
-import lime.manager.LimeManager;
+import shark.system.PerformanceManager;
 import shark.audio.Audio;
 import shark.backend.Language;
 import shark.backend.SharkCamera;
 import shark.mobile.backend.Vibration.HapticStyle;
 import shark.mobile.backend.Vibration;
-import git.graphic.GraphicGit;
-import git.resolution.Resolution4K;
+import shark.graphics.ProceduralGraphics;
+import shark.system.Resolution4K;
 import shark.shaders.WaterShader;
 
 class FlixelShark
@@ -151,10 +152,10 @@ class FlixelShark
 
 	public static function scaleCountForMemory(baseCount:Int):Int
 	{
-		if (LimeManager.isLowMemoryMode)
+		if (PerformanceManager.isLowMemoryMode)
 			return Std.int(baseCount * 0.4);
 
-		if (LimeManager.currentQualityTier == 0)
+		if (PerformanceManager.currentQualityTier == 0)
 			return Std.int(baseCount * 0.6);
 
 		return baseCount;
@@ -178,14 +179,14 @@ class FlixelShark
 	public static function createRoundedCard(state:FlxState, x:Float, y:Float, width:Float, height:Float, bgColor:FlxColor, accentColor:FlxColor,
 			radius:Float = 10, shadowColor:FlxColor = FlxColor.BLACK):FlxSprite
 	{
-		var shadow = GraphicGit.makeRoundedRectSprite(x + 4, y + 4, Std.int(width), Std.int(height), shadowColor, radius, 0.35);
+		var shadow = ProceduralGraphics.makeRoundedRectSprite(x + 4, y + 4, Std.int(width), Std.int(height), shadowColor, radius, 0.35);
 		state.add(shadow);
 
-		var card = GraphicGit.makeRoundedRectSprite(x, y, Std.int(width), Std.int(height), bgColor, radius, 0.35);
+		var card = ProceduralGraphics.makeRoundedRectSprite(x, y, Std.int(width), Std.int(height), bgColor, radius, 0.35);
 		state.add(card);
 
 		var border = new FlxSprite(x, y);
-		border.pixels = GraphicGit.createRoundedRectBorder(Std.int(width), Std.int(height), accentColor, radius, 2, 0.7);
+		border.pixels = ProceduralGraphics.createRoundedRectBorder(Std.int(width), Std.int(height), accentColor, radius, 2, 0.7);
 		state.add(border);
 
 		return card;
@@ -194,15 +195,15 @@ class FlixelShark
 	public static function createRoundedPanel(state:FlxState, x:Float, y:Float, width:Float, height:Float, color:FlxColor, radius:Float = 12,
 			alpha:Float = 0.35):FlxSprite
 	{
-		var panel = GraphicGit.makeRoundedRectSprite(x, y, Std.int(width), Std.int(height), color, radius, alpha);
+		var panel = ProceduralGraphics.makeRoundedRectSprite(x, y, Std.int(width), Std.int(height), color, radius, alpha);
 		state.add(panel);
 		return panel;
 	}
 
 	public static function createChatBubbleCard(state:FlxState, x:Float, y:Float, width:Float, height:Float, color:FlxColor,
-			tail:git.graphic.GraphicGit.BubbleTail = LEFT, radius:Float = 12, tailSize:Float = 10, alpha:Float = 0.9):FlxSprite
+			tail:shark.graphics.ProceduralGraphics.BubbleTail = LEFT, radius:Float = 12, tailSize:Float = 10, alpha:Float = 0.9):FlxSprite
 	{
-		var bubble = GraphicGit.makeChatBubbleSprite(x, y, Std.int(width), Std.int(height), color, radius, tail, tailSize, alpha);
+		var bubble = ProceduralGraphics.makeChatBubbleSprite(x, y, Std.int(width), Std.int(height), color, radius, tail, tailSize, alpha);
 		state.add(bubble);
 		return bubble;
 	}
@@ -210,10 +211,10 @@ class FlixelShark
 	public static function createProgressBar(state:FlxState, x:Float, y:Float, width:Float, height:Float, bgColor:FlxColor, fillColor:FlxColor,
 			progress:Float = 1):{background:FlxSprite, fill:FlxSprite}
 	{
-		var background = GraphicGit.makePillSprite(x, y, Std.int(width), Std.int(height), bgColor, 1);
+		var background = ProceduralGraphics.makePillSprite(x, y, Std.int(width), Std.int(height), bgColor, 1);
 		state.add(background);
 
-		var fill = GraphicGit.makePillSprite(x, y, Std.int(width), Std.int(height), fillColor, 1);
+		var fill = ProceduralGraphics.makePillSprite(x, y, Std.int(width), Std.int(height), fillColor, 1);
 		state.add(fill);
 
 		setProgressBarValue(fill, width, progress);
@@ -324,7 +325,7 @@ class FlixelShark
 	{
 		var size:Int = Std.int(Math.min(button.width, button.height) * 0.5);
 		var icon = new FlxSprite(button.x + (button.width - size) / 2, button.y + (button.height - size) / 2);
-		icon.pixels = GraphicGit.createPlus(size, color, 3);
+		icon.pixels = ProceduralGraphics.createPlus(size, color, 3);
 		state.add(icon);
 		return icon;
 	}
@@ -538,7 +539,7 @@ class FlixelShark
 		};
 	}
 
-	public static function safeSwitchState(newState:FlxState, useTransition:Bool = true, transitionDuration:Float = 0.4,
+	public static function safeSwitchState(newState:NextState, useTransition:Bool = true, transitionDuration:Float = 0.4,
 			transitionColor:FlxColor = FlxColor.BLACK):Bool
 	{
 		if (newState == null)
@@ -548,7 +549,7 @@ class FlixelShark
 		return true;
 	}
 
-	public static function switchState(newState:FlxState, useTransition:Bool = true, transitionDuration:Float = 0.4, transitionColor:FlxColor = FlxColor.BLACK):Void
+	public static function switchState(newState:NextState, useTransition:Bool = true, transitionDuration:Float = 0.4, transitionColor:FlxColor = FlxColor.BLACK):Void
 	{
 		if (useTransition)
 			SharkCamera.transitionToState(newState, transitionDuration, transitionColor);

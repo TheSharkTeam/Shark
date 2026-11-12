@@ -10,8 +10,8 @@ import shark.online.manager.Internet;
 import shark.ui.security.Guard;
 
 #if cpp
-import lime.manager.LimeManager;
-import lime.manager.SutilLime;
+import shark.system.PerformanceManager;
+import shark.system.Diagnostics;
 #end
 
 typedef CommandRequest = {
@@ -289,7 +289,7 @@ class Head
 		lines.push('${Language.get("head.statusChatConfigured")}: $configured');
 
 		#if cpp
-		lines.push('${Language.get("head.statusBuild")}: ${LimeManager.getBuildSummary()}');
+		lines.push('${Language.get("head.statusBuild")}: ${PerformanceManager.getBuildSummary()}');
 		#end
 
 		request.onReply(lines.join("\n"));

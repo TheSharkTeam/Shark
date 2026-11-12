@@ -1,6 +1,6 @@
 package shark.modding;
 
-import hscript.SharkScript;
+import shark.scripting.SharkScript;
 
 #if sys
 import sys.io.File;

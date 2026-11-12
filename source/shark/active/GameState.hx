@@ -9,9 +9,9 @@ import flixel.util.FlxColor;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
-import flixel.FlixelShark;
-import git.graphic.GraphicGit;
-import git.resolution.Resolution4K;
+import shark.ui.FlixelShark;
+import shark.graphics.ProceduralGraphics;
+import shark.system.Resolution4K;
 import shark.active.games.BubblePopState;
 import shark.active.games.ReefRunnerState;
 import shark.active.games.DeepDiveState;
@@ -26,7 +26,7 @@ typedef GameEntry = {
 	descriptionKey:String,
 	icon:String,
 	accentColor:FlxColor,
-	?stateClass:Class<FlxState>
+	?createState:Void->FlxState
 }
 
 class GameState extends FlxState
@@ -49,7 +49,7 @@ class GameState extends FlxState
 			descriptionKey: "games.bubblePopDescription",
 			icon: "o O o",
 			accentColor: COLOR_BUBBLE,
-			stateClass: BubblePopState
+			createState: BubblePopState.new
 		},
 		{
 			id: "reef_runner",
@@ -57,7 +57,7 @@ class GameState extends FlxState
 			descriptionKey: "games.reefRunnerDescription",
 			icon: ">>>",
 			accentColor: COLOR_REEF,
-			stateClass: ReefRunnerState
+			createState: ReefRunnerState.new
 		},
 		{
 			id: "deep_dive",
@@ -65,7 +65,7 @@ class GameState extends FlxState
 			descriptionKey: "games.deepDiveDescription",
 			icon: "\\ /",
 			accentColor: COLOR_ACCENT,
-			stateClass: DeepDiveState
+			createState: DeepDiveState.new
 		},
 		{
 			id: "shark_feed_frenzy",
@@ -73,7 +73,7 @@ class GameState extends FlxState
 			descriptionKey: "games.sharkFeedFrenzyDescription",
 			icon: "> <",
 			accentColor: COLOR_FISH,
-			stateClass: SharkFeedFrenzyState
+			createState: SharkFeedFrenzyState.new
 		}
 	];
 
@@ -136,7 +136,7 @@ class GameState extends FlxState
 
 			var card:FlxSprite = FlixelShark.createRoundedCard(this, cardX, cardY, cardWidth, cardHeight, COLOR_MID, entry.accentColor, 10, COLOR_ABYSS);
 
-			var iconBadge = GraphicGit.makeRoundedRectSprite(cardX + 20, cardY + cardHeight / 2 - 18, 36, 36, entry.accentColor, 8, 0.85);
+			var iconBadge = ProceduralGraphics.makeRoundedRectSprite(cardX + 20, cardY + cardHeight / 2 - 18, 36, 36, entry.accentColor, 8, 0.85);
 			add(iconBadge);
 
 			var iconLabel = FlixelShark.makeText(cardX + 20, cardY + cardHeight / 2 - 18, 36, entry.icon, Resolution4K.scaledInt(10), COLOR_ABYSS, CENTER);
@@ -195,8 +195,8 @@ class GameState extends FlxState
 
 	function onGameSelected(entry:GameEntry):Void
 	{
-		if (entry.stateClass != null)
-			FlixelShark.safeSwitchState(Type.createInstance(entry.stateClass, []));
+		if (entry.createState != null)
+			FlixelShark.safeSwitchState(entry.createState);
 	}
 
 	override public function update(elapsed:Float):Void
@@ -209,6 +209,6 @@ class GameState extends FlxState
 
 	function onBackPressed():Void
 	{
-		FlixelShark.safeSwitchState(new MainMenuState());
+		FlixelShark.safeSwitchState(MainMenuState.new);
 	}
 }

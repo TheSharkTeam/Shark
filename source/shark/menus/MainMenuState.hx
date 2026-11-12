@@ -6,15 +6,15 @@ import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
 import flixel.text.FlxText;
 import flixel.ui.FlxButton;
-import flixel.addons.ui.FlxInputText;
+import flixel.text.FlxInputText;
 import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import openfl.display.BitmapData;
-import flixel.FlixelShark;
-import git.graphic.GraphicGit;
-import git.performance.Boost;
-import git.resolution.Resolution4K;
+import shark.ui.FlixelShark;
+import shark.graphics.ProceduralGraphics;
+import shark.system.Boost;
+import shark.system.Resolution4K;
 import shark.active.GameState;
 import shark.active.system.Body;
 import shark.active.system.BodyState;
@@ -31,10 +31,9 @@ import shark.mobile.ui.AndroidKeyboard;
 import shark.shaders.WaterShader;
 import shark.shaders.WaterShader.IUpdatableShader;
 import shark.ui.debug.menu.DebugMenuState;
-import lime.manager.LimeManager;
+import shark.system.PerformanceManager;
 
-import Main;
-import MainCpp;
+import shark.native.MainCpp;
 
 class MainMenuState extends FlxState
 {
@@ -115,12 +114,12 @@ class MainMenuState extends FlxState
 		var historyTop:Int = Std.int(body.y + 90);
 		var historyHeight:Int = FlxG.height - historyTop - (isMobile ? 100 : 70);
 
-		var historyBackdrop = GraphicGit.makeRoundedRectSprite(historyPad - 10, historyTop, FlxG.width - (historyPad - 10) * 2, historyHeight, COLOR_MID, 14,
+		var historyBackdrop = ProceduralGraphics.makeRoundedRectSprite(historyPad - 10, historyTop, FlxG.width - (historyPad - 10) * 2, historyHeight, COLOR_MID, 14,
 			0.35);
 		add(historyBackdrop);
 
 		var historyBorder = new FlxSprite(historyPad - 10, historyTop);
-		historyBorder.pixels = GraphicGit.createRoundedRectBorder(Std.int(FlxG.width - (historyPad - 10) * 2), historyHeight, COLOR_ACCENT, 14, 2, 0.6);
+		historyBorder.pixels = ProceduralGraphics.createRoundedRectBorder(Std.int(FlxG.width - (historyPad - 10) * 2), historyHeight, COLOR_ACCENT, 14, 2, 0.6);
 		add(historyBorder);
 
 		historyContentX = historyPad;
@@ -177,11 +176,9 @@ class MainMenuState extends FlxState
 		var inputWidth:Int = isMobile ? FlxG.width - Resolution4K.scaledInt(160) : FlxG.width - Resolution4K.scaledInt(140);
 		var rowY:Float = FlxG.height - inputHeight - 20;
 
-		inputField = new FlxInputText(historyPad, rowY, inputWidth, "", Resolution4K.scaledInt(isMobile ? 20 : 16), COLOR_FOAM);
-		inputField.backgroundColor = COLOR_MID;
-		inputField.borderColor = COLOR_ACCENT;
-		inputField.borderStyle = OUTLINE;
-		inputField.borderSize = 2;
+		inputField = new FlxInputText(historyPad, rowY, inputWidth, "", Resolution4K.scaledInt(isMobile ? 20 : 16), COLOR_FOAM, COLOR_MID);
+		inputField.fieldBorderColor = COLOR_ACCENT;
+		inputField.fieldBorderThickness = 2;
 		add(inputField);
 
 		sendButton = FlixelShark.createIconButton(this, historyPad + inputWidth + 10, rowY, inputHeight, inputHeight, COLOR_WAVE, onSendPressed);
@@ -205,7 +202,7 @@ class MainMenuState extends FlxState
 
 	function onDebugPressed():Void
 	{
-		FlixelShark.switchState(new DebugMenuState(), true, 0.4, COLOR_ABYSS);
+		FlixelShark.switchState(DebugMenuState.new, true, 0.4, COLOR_ABYSS);
 	}
 
 	function refreshMuteIcon(muted:Bool):Void
@@ -224,7 +221,7 @@ class MainMenuState extends FlxState
 
 	function createVersionTag():Void
 	{
-		var versionText = FlixelShark.makeText(0, FlxG.height - (isMobile ? 18 : 14), FlxG.width - 10, 'v${LimeManager.buildVersion}', 10, COLOR_ACCENT, RIGHT);
+		var versionText = FlixelShark.makeText(0, FlxG.height - (isMobile ? 18 : 14), FlxG.width - 10, 'v${PerformanceManager.buildVersion}', 10, COLOR_ACCENT, RIGHT);
 		versionText.alpha = 0.5;
 		add(versionText);
 	}
@@ -422,7 +419,7 @@ class MainMenuState extends FlxState
 
 	function goToGameState():Void
 	{
-		FlixelShark.switchState(new GameState(), true, 0.4, COLOR_ABYSS);
+		FlixelShark.switchState(GameState.new, true, 0.4, COLOR_ABYSS);
 	}
 
 	function onReply(reply:String):Void
@@ -486,7 +483,7 @@ class MainMenuState extends FlxState
 
 	function onOptionsPressed():Void
 	{
-		FlixelShark.switchState(new OptionsState(), true, 0.4, COLOR_ABYSS);
+		FlixelShark.switchState(OptionsState.new, true, 0.4, COLOR_ABYSS);
 	}
 
 	function onBoostPressed():Void

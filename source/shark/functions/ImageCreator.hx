@@ -19,7 +19,7 @@ import shark.online.Online;
 import shark.online.User;
 import shark.ui.debug.CrasherLog;
 import shark.ui.security.Guard;
-import lime.manager.LimeManager;
+import shark.system.PerformanceManager;
 
 typedef ImageRequest = {
 	prompt:String,
@@ -76,9 +76,9 @@ class ImageCreator
 
 		Content.initialize();
 
-		var previousCallback:Bool->Void = LimeManager.onLowMemoryModeChanged;
+		var previousCallback:Bool->Void = PerformanceManager.onLowMemoryModeChanged;
 
-		LimeManager.onLowMemoryModeChanged = function(isLow:Bool):Void
+		PerformanceManager.onLowMemoryModeChanged = function(isLow:Bool):Void
 		{
 			if (previousCallback != null)
 				previousCallback(isLow);
@@ -368,8 +368,8 @@ class ImageCreator
 		var loader = new Loader();
 		var finished:Bool = false;
 		var timeoutTimer:Timer = null;
-		var onLoadComplete:Event->Void;
-		var onLoadError:IOErrorEvent->Void;
+		var onLoadComplete:Event->Void = null;
+		var onLoadError:IOErrorEvent->Void = null;
 
 		onLoadComplete = function(e:Event):Void
 		{

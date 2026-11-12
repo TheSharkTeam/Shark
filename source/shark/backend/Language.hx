@@ -5,7 +5,6 @@ import shark.backend.JsonObject;
 import shark.backend.Paths;
 import shark.backend.language.LanguageData;
 
-import Main;
 
 class Language
 {

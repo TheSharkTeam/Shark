@@ -1,6 +1,7 @@
 package shark.backend;
 
 import flixel.FlxG;
+import flixel.util.typeLimit.NextState;
 import flixel.FlxState;
 import flixel.FlxSprite;
 import flixel.tweens.FlxTween;
@@ -88,7 +89,7 @@ class SharkCamera
 		FlxG.camera.fade(color, duration, true, onComplete, true);
 	}
 
-	public static function transitionToState(newState:FlxState, duration:Float = 0.4, color:FlxColor = FlxColor.BLACK):Void
+	public static function transitionToState(newState:NextState, duration:Float = 0.4, color:FlxColor = FlxColor.BLACK):Void
 	{
 		if (isTransitioning)
 			return;

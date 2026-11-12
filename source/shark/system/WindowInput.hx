@@ -1,4 +1,4 @@
-package lime.input;
+package shark.system;
 
 import lime.app.Application;
 import lime.ui.KeyCode;
@@ -6,7 +6,7 @@ import lime.ui.KeyModifier;
 import lime.ui.Window;
 import lime.ui.Gamepad;
 
-class LimeInput
+class WindowInput
 {
 	public static var onRawKeyDown:KeyCode->KeyModifier->Void;
 	public static var onRawKeyUp:KeyCode->KeyModifier->Void;

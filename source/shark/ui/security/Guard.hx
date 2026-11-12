@@ -4,7 +4,7 @@ import haxe.io.Bytes;
 import haxe.crypto.Sha256;
 
 #if cpp
-import hxcpp.CPP;
+import shark.native.CPP;
 #end
 
 class Guard
