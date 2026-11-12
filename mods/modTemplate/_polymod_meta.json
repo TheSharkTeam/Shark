@@ -1,0 +1,14 @@
+{
+	"title": "Mod Template",
+	"description": "A starting point for Shark mods. Copy this folder, rename it and change this file.",
+	"contributors": [
+		{
+			"name": "Your Name",
+			"role": "Author"
+		}
+	],
+	"homepage": "",
+	"api_version": "0.3.0",
+	"mod_version": "1.0.0",
+	"license": "MIT"
+}

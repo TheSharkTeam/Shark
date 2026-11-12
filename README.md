@@ -55,7 +55,7 @@ Shark/
 │       ├── macros/SharkMacro.hx        Compile-time build info (version, commit, platform)
 │       ├── menus/                      MainMenuState, intro/IntroState, options/OptionsState
 │       ├── mobile/                     StorageUtil, backend/Vibration, ui/AndroidKeyboard, utils/TouchUtil
-│       ├── modding/                    Module, ModuleHandler, api/ModVersion
+│       ├── modding/                    PolymodHandler (asset overrides), Module, ModuleHandler, api/ModVersion
 │       ├── native/                     CPP (native helpers), MainCpp (boot checkpoints), Native
 │       ├── online/                     Online, Network, MultiPlayer, User, manager/Internet
 │       ├── scripting/SharkScript.hx    Sandboxed hscript wrapper
@@ -65,7 +65,7 @@ Shark/
 │       ├── ui/                         FlixelShark, Cursor, Guard, WindowTheme, Discord, debug/, layouts/ (HaxeUI XML), views/ (HaxeUI view classes)
 │       └── world/Country.hx
 ├── assets/                             images/, sounds/, shaders/, ui/shark.css (HaxeUI theme), data/ (config.json is gitignored)
-├── mods/                               Optional bundled mods + README
+├── mods/                               Bundled mods, including modTemplate (start new mods from it)
 ├── setup/application/Setup.hx          One-time project bootstrap
 ├── Project.hxp                         Lime/OpenFL project configuration
 ├── hmm.json                            Haxe dependency lockfile
@@ -78,8 +78,8 @@ Shark/
 - [Haxe](https://haxe.org/) 4.3.x
 - [hmm](https://github.com/andywhite37/hmm) for dependency management
 - [Lime](https://lime.software/) 8.3.2, [OpenFL](https://www.openfl.org/) 9.5.2, [hxp](https://github.com/openfl/hxp), [hxcpp](https://github.com/HaxeFoundation/hxcpp) 4.3.2
-- [HaxeFlixel](https://github.com/TheSharkTeam/flixel) (TheSharkTeam fork)
-- [hscript](https://github.com/HaxeFoundation/hscript) 2.7.0, [haxeui-core](https://github.com/haxeui/haxeui-core) + [haxeui-flixel](https://github.com/haxeui/haxeui-flixel) (git)
+- [HaxeFlixel](https://haxeflixel.com/) 6.2.0
+- [hscript](https://github.com/HaxeFoundation/hscript) 2.7.0, [haxeui-core](https://github.com/haxeui/haxeui-core) + [haxeui-flixel](https://github.com/haxeui/haxeui-flixel) (git), [polymod](https://github.com/larsiusprime/polymod) 1.8.0
 - [extension-androidtools](https://github.com/MAJigsaw77/extension-androidtools) 2.2.2 (Android only)
 
 See `hmm.json` for the full, version-pinned dependency list.
@@ -199,7 +199,9 @@ All three support keyboard, mouse, touch (including swipe-as-direction on mobile
 
 ## Modding
 
-Drop a `.hxs` file (HScript) into the app's `mods/` folder to extend behavior without recompiling. On mobile/desktop this is a real folder on disk (inside the app's private storage); the app also ships with the ability to bundle "factory" mods that get copied there automatically on first run if you place a `mods/` folder at the repo root before building.
+Mods live in the app's `mods/` folder (inside the app's private storage on desktop and mobile). Everything in the repo's `mods/` folder is bundled with the app and copied there on first launch.
+
+A mod is a folder with a `_polymod_meta.json`. Files under its `assets/` replace game assets with the same path (loaded through [Polymod](https://github.com/larsiusprime/polymod)), and every `.hxs` (HScript) file in its `scripts/` folder is loaded on startup. Loose `.hxs` files directly in `mods/` still work too. Start from `mods/modTemplate`, which documents the metadata, folder layout, hooks and script API in its own README.
 
 ```haxe
 function onCreate() {

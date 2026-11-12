@@ -17,10 +17,8 @@
     },
     {
       "name": "flixel",
-      "type": "git",
-      "dir": null,
-      "ref": null,
-      "url": "https://github.com/TheSharkTeam/flixel.git"
+      "type": "haxelib",
+      "version": "6.2.0"
     },
     {
       "name": "hscript",
@@ -50,6 +48,35 @@
       "dir": null,
       "ref": null,
       "url": "https://github.com/haxeui/haxeui-flixel.git"
+    },
+    {
+      "name": "polymod",
+      "type": "haxelib",
+      "version": "1.8.0"
+    },
+    {
+      "name": "thx.core",
+      "type": "haxelib",
+      "version": "0.44.0"
+    },
+    {
+      "name": "thx.semver",
+      "type": "haxelib",
+      "version": "0.2.2"
+    },
+    {
+      "name": "jsonpath",
+      "type": "git",
+      "dir": null,
+      "ref": null,
+      "url": "https://github.com/EliteMasterEric/jsonpath.git"
+    },
+    {
+      "name": "jsonpatch",
+      "type": "git",
+      "dir": null,
+      "ref": null,
+      "url": "https://github.com/EliteMasterEric/jsonpatch.git"
     }
   ]
 }

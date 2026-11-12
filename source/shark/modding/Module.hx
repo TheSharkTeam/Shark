@@ -12,6 +12,8 @@ class Module
 {
 	public static inline var MODS_FOLDER:String = "mods";
 	public static inline var SCRIPT_EXTENSION:String = "hxs";
+	public static inline var MOD_META_FILE:String = "_polymod_meta.json";
+	public static inline var MOD_SCRIPTS_FOLDER:String = "scripts";
 
 	public var name(default, null):String;
 	public var isLoaded(default, null):Bool = false;
@@ -179,17 +181,19 @@ class Module
 	public static function listAvailableModules():Array<String>
 	{
 		#if sys
-		var path:String = getModsDirectory();
+		var root:String = getModsDirectory();
 
-		if (!FileSystem.exists(path))
+		if (!FileSystem.exists(root))
 			return [];
 
-		var names:Array<String> = [];
+		var names:Array<String> = scriptsIn(root, "");
 
-		for (fileName in FileSystem.readDirectory(path))
+		for (entry in FileSystem.readDirectory(root))
 		{
-			if (StringTools.endsWith(fileName, "." + SCRIPT_EXTENSION))
-				names.push(fileName.substr(0, fileName.length - SCRIPT_EXTENSION.length - 1));
+			var folder:String = '$root/$entry';
+
+			if (FileSystem.isDirectory(folder) && FileSystem.exists('$folder/$MOD_META_FILE') && FileSystem.exists('$folder/$MOD_SCRIPTS_FOLDER'))
+				names = names.concat(scriptsIn('$folder/$MOD_SCRIPTS_FOLDER', '$entry/$MOD_SCRIPTS_FOLDER/'));
 		}
 
 		return names;
@@ -197,4 +201,17 @@ class Module
 		return [];
 		#end
 	}
+
+	#if sys
+	static function scriptsIn(path:String, prefix:String):Array<String>
+	{
+		var suffix:String = "." + SCRIPT_EXTENSION;
+
+		return [
+			for (fileName in FileSystem.readDirectory(path))
+				if (StringTools.endsWith(fileName, suffix))
+					prefix + fileName.substr(0, fileName.length - suffix.length)
+		];
+	}
+	#end
 }

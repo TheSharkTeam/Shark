@@ -1,0 +1,21 @@
+function onCreate()
+{
+	logInfo(modName + " loaded (mod API " + apiVersion + ")");
+
+	registerCommand("/template", function(args, reply)
+	{
+		reply("Hello from " + modName + "!");
+	});
+}
+
+function onMessageSent(message)
+{
+}
+
+function onReplyReceived(reply)
+{
+}
+
+function onLanguageChanged(languageCode)
+{
+}

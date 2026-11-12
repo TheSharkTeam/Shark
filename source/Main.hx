@@ -48,6 +48,7 @@ import shark.system.Resolution4K;
 import shark.backend.Mods;
 import shark.mobile.utils.TouchUtil;
 import shark.modding.Module;
+import shark.modding.PolymodHandler;
 import shark.modding.ModuleHandler;
 import shark.api.google.GoogleClient;
 import shark.world.Country;
@@ -159,6 +160,7 @@ class Main extends Sprite
 		try
 		{
 			extractBundledMods();
+			PolymodHandler.initialize();
 			ModuleHandler.initialize();
 			Mods.initialize();
 		}
@@ -385,39 +387,30 @@ class Main extends Sprite
 	function extractBundledMods():Void
 	{
 		#if (sys && SHARK_HAS_BUNDLED_MODS)
-		try
+		if (!Module.ensureModsDirectory())
+			return;
+
+		var prefix:String = Module.MODS_FOLDER + "/";
+
+		for (path in openfl.utils.Assets.list())
 		{
-			if (!Module.ensureModsDirectory())
-				return;
+			if (!StringTools.startsWith(path, prefix))
+				continue;
 
-			var prefix:String = "assets/mods/";
-			var suffix:String = "." + Module.SCRIPT_EXTENSION;
+			var destination:String = Module.getModsDirectory() + "/" + path.substr(prefix.length);
 
-			for (path in openfl.utils.Assets.list())
+			if (sys.FileSystem.exists(destination))
+				continue;
+
+			try
 			{
-				if (!StringTools.startsWith(path, prefix) || !StringTools.endsWith(path, suffix))
-					continue;
-
-				var filename:String = path.substr(prefix.length);
-				var destPath:String = Module.getModsDirectory() + "/" + filename;
-
-				if (sys.FileSystem.exists(destPath))
-					continue;
-
-				try
-				{
-					var content:String = openfl.utils.Assets.getText(path);
-					sys.io.File.saveContent(destPath, content);
-				}
-				catch (e:Dynamic)
-				{
-					CrasherLog.logWarning('Failed to extract bundled mod: $filename');
-				}
+				sys.FileSystem.createDirectory(haxe.io.Path.directory(destination));
+				sys.io.File.saveBytes(destination, openfl.utils.Assets.getBytes(path));
 			}
-		}
-		catch (e:Dynamic)
-		{
-			CrasherLog.logWarning('Mod extraction failed entirely: ${Std.string(e)}');
+			catch (e:Dynamic)
+			{
+				CrasherLog.logWarning('Failed to extract bundled mod file $path: ${Std.string(e)}', "mods");
+			}
 		}
 		#end
 	}

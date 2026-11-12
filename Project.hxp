@@ -85,7 +85,7 @@ class Project extends HXProject
 
 	function setupHaxelibs():Void
 	{
-		for (name in ["lime", "openfl", "flixel", "hscript", "haxeui-core", "haxeui-flixel"])
+		for (name in ["lime", "openfl", "flixel", "hscript", "polymod", "haxeui-core", "haxeui-flixel"])
 			haxelibs.push(new Haxelib(name));
 
 		if (target == ANDROID)
