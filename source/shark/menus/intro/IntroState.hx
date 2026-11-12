@@ -15,7 +15,7 @@ import openfl.media.SoundTransform;
 import openfl.utils.Assets;
 import shark.ui.FlixelShark;
 import shark.active.system.Body;
-import shark.backend.Language;
+import shark.backend.localization.Language;
 import shark.menus.MainMenuState;
 import shark.mobile.backend.Vibration;
 import shark.modding.ModuleHandler;

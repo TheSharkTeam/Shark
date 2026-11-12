@@ -88,8 +88,6 @@ class Project extends HXProject
 		for (name in ["lime", "openfl", "flixel", "hscript", "polymod", "haxeui-core", "haxeui-flixel"])
 			haxelibs.push(new Haxelib(name));
 
-		if (target == ANDROID)
-			haxelibs.push(new Haxelib("extension-androidtools"));
 	}
 
 	function setupAssets():Void
@@ -164,7 +162,8 @@ class Project extends HXProject
 
 		architectures = [Architecture.ARMV7, Architecture.ARM64];
 
-		config.set("android.permissions", "android.permission.INTERNET android.permission.RECORD_AUDIO android.permission.READ_MEDIA_IMAGES android.permission.READ_MEDIA_AUDIO");
+		config.set("android.permissions", "android.permission.INTERNET android.permission.RECORD_AUDIO android.permission.READ_MEDIA_IMAGES android.permission.READ_MEDIA_AUDIO android.permission.WRITE_EXTERNAL_STORAGE");
+		javaPaths.push("source/shark/backend/storage/native/android");
 		config.set("android.target-sdk-version", "35");
 		config.set("android.minimum-sdk-version", "21");
 		config.set("android.install-location", "auto");
@@ -188,6 +187,8 @@ class Project extends HXProject
 	function setupIOS():Void
 	{
 		setupMobile("ios");
+
+		templatePaths.push("templates");
 
 		config.set("ios.deployment", "12.0");
 		config.set("ios.device", "universal");

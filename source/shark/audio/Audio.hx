@@ -2,8 +2,8 @@ package shark.audio;
 
 import flixel.FlxG;
 import flixel.sound.FlxSound;
-import shark.backend.ClientPrefs;
-import shark.backend.Paths;
+import shark.backend.save.ClientPrefs;
+import shark.backend.assets.Paths;
 
 class Audio
 {

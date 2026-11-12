@@ -2,9 +2,9 @@ package shark.system;
 
 import flixel.FlxG;
 import haxe.Timer;
-import shark.backend.ClientPrefs;
+import shark.backend.save.ClientPrefs;
 import shark.online.Online;
-import shark.mobile.StorageUtil;
+import shark.backend.storage.StorageUtil;
 import shark.ui.debug.CrasherLog;
 
 
@@ -333,7 +333,7 @@ class PerformanceManager
 			if (now - lastGcActionTime >= GC_ACTION_COOLDOWN_SECONDS)
 			{
 				lastGcActionTime = now;
-				shark.backend.Paths.clearVolatileCache();
+				shark.backend.assets.Paths.clearVolatileCache();
 				CPP.collectGarbage(false);
 				CrasherLog.addBreadcrumb('Forced cache clear + GC at ${Math.round(memoryUsageMB)}MB', "performance");
 			}

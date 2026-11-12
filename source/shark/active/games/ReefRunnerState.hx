@@ -8,7 +8,7 @@ import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
-import shark.backend.HighScores;
+import shark.backend.save.HighScores;
 
 class ReefRunnerState extends FlxState
 {

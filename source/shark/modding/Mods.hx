@@ -1,4 +1,4 @@
-package shark.backend;
+package shark.modding;
 
 import openfl.display.BitmapData;
 import shark.active.system.Body;
@@ -6,7 +6,7 @@ import shark.active.system.BodyState;
 import shark.active.system.Head;
 import shark.active.system.Head.CommandRequest;
 import shark.audio.Audio;
-import shark.data.DataFile;
+import shark.backend.save.DataFile;
 import shark.functions.ImageCreator;
 import shark.mobile.backend.Vibration.HapticStyle;
 import shark.mobile.backend.Vibration;
@@ -338,7 +338,7 @@ class Mods
 	{
 		updateFailureCounts = new Map();
 		loadAll();
-		shark.backend.Paths.onModsReloaded();
+		shark.backend.assets.Paths.onModsReloaded();
 	}
 
 	public static function setModuleEnabled(name:String, enabled:Bool):Void

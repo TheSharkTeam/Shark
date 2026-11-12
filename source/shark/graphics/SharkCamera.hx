@@ -1,4 +1,4 @@
-package shark.backend;
+package shark.graphics;
 
 import flixel.FlxG;
 import flixel.util.typeLimit.NextState;

@@ -1,4 +1,4 @@
-package shark.mobile;
+package shark.backend.storage;
 
 import openfl.display.BitmapData;
 import openfl.display.PNGEncoderOptions;
@@ -8,10 +8,6 @@ import lime.system.System;
 import shark.modding.Module;
 import shark.ui.debug.CrasherLog;
 import shark.ui.security.Guard;
-
-#if android
-import extension.androidtools.content.Context;
-#end
 
 #if sys
 import sys.FileSystem;
@@ -41,6 +37,7 @@ class StorageUtil
 	public static var maxStorageMB:Float = 250;
 	public static var generateThumbnails:Bool = true;
 	public static var thumbnailMaxDimension:Int = 256;
+	public static var minimumFreeSpaceMB:Float = 50;
 
 	static inline var THUMBNAIL_SUFFIX:String = "_thumb.png";
 
@@ -59,7 +56,7 @@ class StorageUtil
 
 	public static function isExternalStorageAvailable():Bool
 	{
-		#if android
+		#if (android || ios)
 		return resolveExternalStoragePath() != null;
 		#else
 		return false;
@@ -70,7 +67,7 @@ class StorageUtil
 	{
 		if (location == EXTERNAL)
 		{
-			#if android
+			#if (android || ios)
 			var external:String = resolveExternalStoragePath();
 
 			if (external != null)
@@ -106,38 +103,78 @@ class StorageUtil
 		return path;
 	}
 
-	#if android
+	#if (android || ios)
 	static function resolveExternalStoragePath():String
 	{
-		if (externalPathChecked)
-			return cachedExternalPath;
-
-		externalPathChecked = true;
-
-		try
+		if (!externalPathChecked)
 		{
-			cachedExternalPath = Context.getExternalFilesDir();
-		}
-		catch (e:Dynamic)
-		{
-			cachedExternalPath = null;
-		}
+			externalPathChecked = true;
+			cachedExternalPath = NativeStorage.getExternalDirectory();
 
-		if (cachedExternalPath == null)
-			CrasherLog.logWarning("External files directory unavailable - falling back to internal storage.", "storage");
+			if (cachedExternalPath == null)
+				CrasherLog.logWarning("External files directory unavailable - falling back to internal storage.", "storage");
+		}
 
 		return cachedExternalPath;
 	}
+	#end
 
 	public static function hasExternalStoragePermission():Bool
 	{
-		return true;
+		return NativeStorage.hasGalleryPermission();
 	}
-	#end
 
 	public static function requestExternalStoragePermission(onResult:Bool->Void):Void
 	{
-		onResult(true);
+		NativeStorage.requestGalleryPermission();
+		onResult(NativeStorage.hasGalleryPermission());
+	}
+
+	public static function getFreeSpaceMB(location:StorageLocation = DATA):Float
+	{
+		var bytes:Float = NativeStorage.getFreeSpace(getBasePath(location));
+
+		return bytes < 0 ? -1 : bytes / (1024 * 1024);
+	}
+
+	public static function getTotalSpaceMB(location:StorageLocation = DATA):Float
+	{
+		var bytes:Float = NativeStorage.getTotalSpace(getBasePath(location));
+
+		return bytes < 0 ? -1 : bytes / (1024 * 1024);
+	}
+
+	public static function hasEnoughFreeSpace(location:StorageLocation = DATA):Bool
+	{
+		var freeMB:Float = getFreeSpaceMB(location);
+
+		return freeMB < 0 || freeMB >= minimumFreeSpaceMB;
+	}
+
+	public static function saveImageToGallery(filename:String, location:StorageLocation = DATA):Bool
+	{
+		#if sys
+		var safeName:String = stripPngExtension(sanitizeFilename(filename));
+		var path:String = getContentPath(location) + "/" + safeName + ".png";
+
+		if (!FileSystem.exists(path) || !NativeStorage.isGallerySupported())
+			return false;
+
+		if (!NativeStorage.hasGalleryPermission())
+		{
+			NativeStorage.requestGalleryPermission();
+			return false;
+		}
+
+		var saved:Bool = NativeStorage.saveImageToGallery(path, safeName);
+
+		if (!saved)
+			CrasherLog.logWarning('Failed to save "$safeName" to the device gallery', "storage");
+
+		return saved;
+		#else
+		return false;
+		#end
 	}
 
 	public static function getContentPath(location:StorageLocation = DATA):String
@@ -153,7 +190,10 @@ class StorageUtil
 		try
 		{
 			if (!FileSystem.exists(path))
+			{
 				FileSystem.createDirectory(path);
+				NativeStorage.excludeFromBackup(path);
+			}
 
 			return true;
 		}
@@ -182,13 +222,11 @@ class StorageUtil
 			return;
 		}
 
-		#if android
-		if (location == EXTERNAL && !hasExternalStoragePermission())
+		if (!hasEnoughFreeSpace(location))
 		{
-			CrasherLog.logWarning("External storage permission not granted - saving to internal storage instead.", "storage");
-			location = DATA;
+			onError("Not enough free space on the device");
+			return;
 		}
-		#end
 
 		if (!ensureFolder(location))
 		{
@@ -671,6 +709,11 @@ class StorageUtil
 		}
 
 		lines.push('Mods: ${listModFolders().length} folder(s), ${formatDecimal(getModsStorageUsageMB(), 1)}MB');
+
+		var freeMB:Float = getFreeSpaceMB(DATA);
+
+		if (freeMB >= 0)
+			lines.push('Device: ${formatDecimal(freeMB, 0)}/${formatDecimal(getTotalSpaceMB(DATA), 0)}MB free');
 
 		return "StorageUtil: " + lines.join(" | ");
 	}

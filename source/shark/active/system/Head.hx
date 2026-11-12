@@ -2,7 +2,7 @@ package shark.active.system;
 
 import openfl.display.BitmapData;
 import shark.audio.Audio;
-import shark.backend.Language;
+import shark.backend.localization.Language;
 import shark.functions.ChatEngine;
 import shark.functions.ImageCreator;
 import shark.online.User;

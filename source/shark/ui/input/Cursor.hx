@@ -1,7 +1,7 @@
 package shark.ui.input;
 
 import flixel.FlxG;
-import shark.backend.Paths;
+import shark.backend.assets.Paths;
 
 class Cursor
 {

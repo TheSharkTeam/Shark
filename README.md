@@ -41,21 +41,24 @@ Shark/
 │   ├── Main.hx                         Application entry point & lifecycle
 │   ├── flixel/system/debug/log/        LogStyle override (works around the Windows ERROR macro)
 │   └── shark/
-│       ├── Content.hx, FileSys.hx      Content folders; path-traversal-safe file I/O
 │       ├── active/
 │       │   ├── GameState.hx            Mini-game selection screen
 │       │   ├── games/                  BubblePop, ReefRunner, DeepDive, SharkFeedFrenzy
 │       │   └── system/                 Head (brain), Body + BodyState (avatar)
 │       ├── api/                        SharkAPI, google/GoogleClient
 │       ├── audio/Audio.hx              Sound and music playback
-│       ├── backend/                    Paths, ClientPrefs, Language (+ language/), Mods, SharkCamera, JsonObject, HighScores
-│       ├── data/                       DataFile, license/ImageLicense
+│       ├── backend/
+│       │   ├── assets/Paths.hx         Asset resolution, caching, mod overrides
+│       │   ├── localization/           Language + languages/ (English, Portuguese, Spanish)
+│       │   ├── save/                   ClientPrefs, HighScores, DataFile, JsonObject
+│       │   └── storage/                FileSys, Content, StorageUtil, NativeStorage, ImageLicense
+│       │       └── native/             android/ (Java) and ios/ (Objective-C) storage code
 │       ├── functions/                  ChatEngine, ImageCreator
-│       ├── graphics/                   ProceduralGraphics (rounded rects, gradients, glow)
+│       ├── graphics/                   ProceduralGraphics, SharkCamera (camera effects and transitions)
 │       ├── macros/SharkMacro.hx        Compile-time build info (version, commit, platform)
 │       ├── menus/                      MainMenuState, intro/IntroState, options/OptionsState
-│       ├── mobile/                     StorageUtil, backend/Vibration, ui/AndroidKeyboard, utils/TouchUtil
-│       ├── modding/                    PolymodHandler (asset overrides), Module, ModuleHandler, api/ModVersion
+│       ├── mobile/                     backend/Vibration, ui/AndroidKeyboard, utils/TouchUtil
+│       ├── modding/                    Mods, PolymodHandler, Module, ModuleHandler, api/ModVersion
 │       ├── native/                     CPP (native helpers), MainCpp (boot checkpoints), Native
 │       ├── online/                     Online, Network, MultiPlayer, User, manager/Internet
 │       ├── scripting/SharkScript.hx    Sandboxed hscript wrapper
@@ -66,6 +69,7 @@ Shark/
 │       └── world/Country.hx
 ├── assets/                             images/, sounds/, shaders/, ui/shark.css (HaxeUI theme), data/ (config.json is gitignored)
 ├── mods/                               Bundled mods, including modTemplate (start new mods from it)
+├── templates/                          Lime template overrides (iOS Info.plist with photo library access)
 ├── setup/application/Setup.hx          One-time project bootstrap
 ├── Project.hxp                         Lime/OpenFL project configuration
 ├── hmm.json                            Haxe dependency lockfile
@@ -80,7 +84,6 @@ Shark/
 - [Lime](https://lime.software/) 8.3.2, [OpenFL](https://www.openfl.org/) 9.5.2, [hxp](https://github.com/openfl/hxp), [hxcpp](https://github.com/HaxeFoundation/hxcpp) 4.3.2
 - [HaxeFlixel](https://haxeflixel.com/) 6.2.0
 - [hscript](https://github.com/HaxeFoundation/hscript) 2.7.0, [haxeui-core](https://github.com/haxeui/haxeui-core) + [haxeui-flixel](https://github.com/haxeui/haxeui-flixel) (git), [polymod](https://github.com/larsiusprime/polymod) 1.8.0
-- [extension-androidtools](https://github.com/MAJigsaw77/extension-androidtools) 2.2.2 (Android only)
 
 See `hmm.json` for the full, version-pinned dependency list.
 

@@ -1,4 +1,4 @@
-package shark;
+package shark.backend.storage;
 
 class FileSys
 {

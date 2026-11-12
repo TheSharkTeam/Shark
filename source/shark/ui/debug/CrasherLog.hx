@@ -4,7 +4,7 @@ import haxe.Json;
 import haxe.Timer;
 import haxe.CallStack;
 import shark.system.PerformanceManager;
-import shark.FileSys;
+import shark.backend.storage.FileSys;
 
 #if sys
 import sys.io.File;

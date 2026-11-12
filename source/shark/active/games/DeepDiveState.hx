@@ -6,7 +6,7 @@ import flixel.FlxSprite;
 import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
-import shark.backend.HighScores;
+import shark.backend.save.HighScores;
 
 class DeepDiveState extends FlxState
 {

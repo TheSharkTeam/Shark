@@ -1,6 +1,6 @@
 package shark.world;
 
-import shark.backend.ClientPrefs;
+import shark.backend.save.ClientPrefs;
 import shark.online.Network;
 import shark.online.NetworkResponse;
 import shark.ui.debug.CrasherLog;

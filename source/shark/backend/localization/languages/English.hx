@@ -1,4 +1,4 @@
-package shark.backend.language;
+package shark.backend.localization.languages;
 
 class English
 {

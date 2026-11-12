@@ -3,7 +3,7 @@ package shark.menus.options;
 import flixel.FlxG;
 import flixel.FlxState;
 import flixel.util.FlxColor;
-import shark.backend.Language;
+import shark.backend.localization.Language;
 import shark.menus.MainMenuState;
 import shark.mobile.backend.Vibration;
 import shark.modding.ModuleHandler;

@@ -1,4 +1,4 @@
-package shark.backend;
+package shark.backend.save;
 
 class HighScores
 {

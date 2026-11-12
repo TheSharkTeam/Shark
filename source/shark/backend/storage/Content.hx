@@ -1,9 +1,9 @@
-package shark;
+package shark.backend.storage;
 
 import openfl.display.BitmapData;
 import openfl.display.PNGEncoderOptions;
 import openfl.utils.ByteArray;
-import shark.FileSys;
+import shark.backend.storage.FileSys;
 import shark.ui.security.Guard;
 import shark.ui.debug.CrasherLog;
 import lime.system.System;

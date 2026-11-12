@@ -1,9 +1,9 @@
-package shark.backend;
+package shark.backend.localization;
 
 import flixel.FlxG;
-import shark.backend.JsonObject;
-import shark.backend.Paths;
-import shark.backend.language.LanguageData;
+import shark.backend.save.JsonObject;
+import shark.backend.assets.Paths;
+import shark.backend.localization.languages.LanguageData;
 
 
 class Language

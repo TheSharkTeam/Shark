@@ -7,7 +7,7 @@ import flixel.text.FlxText;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
 import flixel.math.FlxPoint;
-import shark.backend.HighScores;
+import shark.backend.save.HighScores;
 
 class BubblePopState extends FlxState
 {

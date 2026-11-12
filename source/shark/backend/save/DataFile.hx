@@ -1,4 +1,4 @@
-package shark.data;
+package shark.backend.save;
 
 import haxe.Json;
 import haxe.Timer;

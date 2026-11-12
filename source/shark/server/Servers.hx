@@ -2,7 +2,7 @@ package shark.server;
 
 import haxe.Http;
 import haxe.Timer;
-import shark.backend.Paths;
+import shark.backend.assets.Paths;
 import shark.functions.ChatEngine;
 import shark.functions.ImageCreator;
 import shark.online.Online;

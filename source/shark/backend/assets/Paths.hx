@@ -1,4 +1,4 @@
-package shark.backend;
+package shark.backend.assets;
 
 import flixel.FlxG;
 import flixel.graphics.FlxGraphic;
@@ -8,7 +8,7 @@ import openfl.display.BitmapData;
 import openfl.media.Sound;
 import openfl.net.URLRequest;
 import openfl.text.Font;
-import shark.backend.JsonObject;
+import shark.backend.save.JsonObject;
 import shark.modding.Module;
 import shark.ui.debug.CrasherLog;
 

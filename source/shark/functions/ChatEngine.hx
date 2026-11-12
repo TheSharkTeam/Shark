@@ -3,7 +3,7 @@ package shark.functions;
 import haxe.Json;
 import haxe.Timer;
 import openfl.display.BitmapData;
-import shark.FileSys;
+import shark.backend.storage.FileSys;
 import shark.functions.ImageCreator;
 import shark.online.Network;
 import shark.online.NetworkResponse;

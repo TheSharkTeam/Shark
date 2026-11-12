@@ -1,8 +1,8 @@
-package shark.data.license;
+package shark.backend.storage;
 
 import haxe.Timer;
 import haxe.crypto.Md5;
-import shark.backend.Paths;
+import shark.backend.assets.Paths;
 import shark.ui.debug.CrasherLog;
 
 enum abstract LicenseDecision(Int)

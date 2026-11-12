@@ -1,7 +1,7 @@
 package shark.modding;
 
 import shark.active.system.Head;
-import shark.backend.Mods;
+import shark.modding.Mods;
 
 class ModuleHandler
 {
