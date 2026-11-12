@@ -1,15 +1,9 @@
 name: Setup Shark toolchain
-description: Installs Haxe, hmm dependencies, and (optionally) runs a generic Lime setup
+description: Installs Haxe and the hmm dependencies, restoring them from cache when hmm.json has not changed
 
 inputs:
   haxe-version:
     required: true
-  lime-setup-target:
-    required: false
-    default: ""
-  skip-lime-setup:
-    required: false
-    default: "false"
 
 runs:
   using: composite
@@ -19,37 +13,21 @@ runs:
       with:
         haxe-version: ${{ inputs.haxe-version }}
 
-    - name: Cache haxelib dependencies
+    - name: Restore haxelib cache
+      id: haxelib-cache
       uses: actions/cache@v4
       with:
         path: .haxelib
-        key: ${{ runner.os }}-haxelib-${{ inputs.haxe-version }}-${{ hashFiles('hmm.json') }}
-        restore-keys: |
-          ${{ runner.os }}-haxelib-${{ inputs.haxe-version }}-
-
-    - name: Install hmm
-      shell: bash
-      run: haxelib install hmm --always
-
-    - name: Verify hmm is installed
-      shell: bash
-      run: |
-        if haxelib list | grep -qi "^hmm:"; then
-          echo "hmm: OK"
-        else
-          echo "::error::hmm did not install correctly - haxelib list shows no 'hmm' entry. This can happen if a restored .haxelib cache is from a different/incompatible haxelib repo layout; try clearing the haxelib cache (bump the cache key or delete it from Actions > Caches)."
-          exit 1
-        fi
+        key: haxelib-${{ runner.os }}-${{ inputs.haxe-version }}-${{ hashFiles('hmm.json') }}
 
     - name: Install dependencies
+      if: steps.haxelib-cache.outputs.cache-hit != 'true'
       shell: bash
-      run: haxelib run hmm install
+      run: |
+        haxelib newrepo
+        haxelib install hmm --always --quiet
+        haxelib run hmm install
 
     - name: List installed haxelibs
       shell: bash
       run: haxelib list
-
-    - name: Setup Lime
-      if: inputs.skip-lime-setup != 'true'
-      shell: bash
-      run: haxelib run lime setup -y ${{ inputs.lime-setup-target }}

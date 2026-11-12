@@ -127,10 +127,9 @@ haxelib run lime build android -final
 haxelib run lime build ios -simulator -final
 haxelib run lime build linux -final
 haxelib run lime build mac -final
-haxelib run lime build html5 -final
 ```
 
-All six targets build automatically via GitHub Actions on every push. Android release builds are signed with a keystore (path/password overridable via `SHARK_KEYSTORE_*` env vars). A seventh, **experimental** Nintendo Switch homebrew workflow (`switch.yml`) is manual-only and not guaranteed to succeed.
+Windows, Linux, macOS, Android and iOS build automatically via GitHub Actions on every push, with haxelib, hxcpp, NDK and Gradle caches so repeat builds only recompile what changed. Android release builds are signed with a keystore (path/password overridable via `SHARK_KEYSTORE_*` env vars), and pushing a `v*` tag publishes every build to a GitHub release.
 
 The build environment (`dev`, `staging` or `production`) comes from `SHARK_ENV`, or from the git branch when it is not set (`main` → production, `staging` → staging, anything else → dev). Dev builds get a "(dev)" title suffix and a visible "Dev Build (Commit: ...)" watermark. `lime.bat release <target>` builds a production release, and `lime.bat publish <target>` does the same but only from `main`.
 

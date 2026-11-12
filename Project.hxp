@@ -171,7 +171,9 @@ class Project extends HXProject
 	function setupDesktop(platform:String):Void
 	{
 		window.resizable = true;
-		architectures = [Architecture.X64];
+
+		if (platform != "mac")
+			architectures = [Architecture.X64];
 
 		haxedefs.set("SHARK_PLATFORM", platform);
 	}
