@@ -73,7 +73,7 @@ jobs:
             artifact-path: export/linux/bin
           - name: macOS
             target: mac
-            os: macos-latest
+            os: macos-15
             artifact-path: export/macos/bin
           - name: Android
             target: android
@@ -81,7 +81,7 @@ jobs:
             artifact-path: export/android/bin/app/build/outputs/apk/**/*.apk
           - name: iOS
             target: ios
-            os: macos-latest
+            os: macos-15
             artifact-path: export/ios/Shark.ipa
 
     defaults:
@@ -197,7 +197,7 @@ jobs:
           fi
 
       - name: Select Xcode
-        if: matrix.target == 'ios'
+        if: matrix.target == 'ios' || matrix.target == 'mac'
         uses: ./.github/actions/select-xcode
 
       - name: Ensure config.json exists
